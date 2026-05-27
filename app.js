@@ -277,10 +277,12 @@
             });
 
             var isMobile = window.innerWidth <= 768;
-            if (isMobile) {
-                answerCardArea.style.position = 'fixed';
-            } else {
+            if (!isMobile) {
                 answerCardArea.style.position = 'sticky';
+                answerCardArea.classList.add('visible');
+                isCardVisible = true;
+            } else {
+                answerCardArea.style.position = 'fixed';
             }
 
             var swipeHint = document.getElementById('swipe-hint');
@@ -288,14 +290,10 @@
 
             if (newState === 'Home') {
                 homePage.style.display = 'block';
-                answerCardArea.classList.remove('visible');
-                isCardVisible = false;
+                if (isMobile) {
+                    answerCardArea.classList.remove('visible');
+                }
                 renderHomePage();
-            } else if (newState === 'Stats') {
-                statsPage.style.display = 'block';
-                answerCardArea.classList.remove('visible');
-                isCardVisible = false;
-                renderStatsPage();
             } else if (newState === 'Quiz' || newState === 'Review') {
                 quizArea.style.display = 'block';
                 currentQuizDisplay.textContent = currentQuizName || '正在答题';
@@ -307,12 +305,21 @@
                     memorizeBanner.style.display = 'none';
                 }
 
-                answerCardArea.classList.add('visible');
-                isCardVisible = true;
+                if (isMobile) {
+                    answerCardArea.classList.remove('visible');
+                    isCardVisible = false;
+                }
 
                 if (swipeHint && newState === 'Quiz') swipeHint.style.display = 'block';
 
                 initQuizUI();
+            } else if (newState === 'Stats') {
+                statsPage.style.display = 'block';
+                if (isMobile) {
+                    answerCardArea.classList.remove('visible');
+                }
+                renderStatsPage();
+            }
         };
 
         function shuffleArray(array) {
@@ -1627,16 +1634,23 @@
         };
 
         window.toggleAnswerCard = function(forceState) {
+            var isMobile = window.innerWidth <= 768;
+
             if (forceState !== undefined) {
                 isCardVisible = forceState;
             } else {
                 isCardVisible = !isCardVisible;
             }
 
-            if (isCardVisible) {
-                answerCardArea.classList.add('visible');
+            if (isMobile) {
+                if (isCardVisible) {
+                    answerCardArea.classList.add('visible');
+                } else {
+                    answerCardArea.classList.remove('visible');
+                }
             } else {
-                answerCardArea.classList.remove('visible');
+                answerCardArea.classList.add('visible');
+                isCardVisible = true;
             }
 
             updateCardToggleText();
