@@ -27,16 +27,6 @@
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
 
-        // 键盘快捷键：焦点选项索引
-        var _kbFocusIdx = 0;
-
-        // 键盘高亮样式注入
-        (function(){
-            var s = document.createElement('style');
-            s.textContent = '.option-item.keyboard-focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 2px rgba(0,49,83,0.25); } [data-theme=\"dark\"] .option-item.keyboard-focus { border-color: var(--color-primary) !important; box-shadow: 0 0 0 2px rgba(138,173,204,0.4); }';
-            document.head.appendChild(s);
-        })();
-
         const HISTORY_LIMIT = 5;
         const QUIZ_LIST_KEY = 'QUIZ_LIST_V8_5';
         const SETTINGS_KEY = 'SETTINGS_V20';
@@ -1425,10 +1415,6 @@
             updateCardToggleText();
 
             attachSwipeListeners(displayContainer);
-
-            // 键盘焦点重置到第一个选项
-            _kbFocusIdx = 0;
-            _kbApplyFocus();
         }
 
         // V20.1: 竞态锁 — 同一题背题判定期间拦截所有并发点击
@@ -1916,58 +1902,6 @@
         };
 
         submitBtn.addEventListener('click', handleSubmit);
-
-        // =========================================================
-        // 桌面端键盘快捷键
-        // =========================================================
-        function _kbGetOptions() {
-            return document.querySelectorAll('#current-question-display .option-item');
-        }
-        function _kbApplyFocus() {
-            var opts = _kbGetOptions();
-            for (var oi = 0; oi < opts.length; oi++) opts[oi].classList.remove('keyboard-focus');
-            if (opts[_kbFocusIdx]) opts[_kbFocusIdx].classList.add('keyboard-focus');
-        }
-        function _kbClearFocus() {
-            var opts = _kbGetOptions();
-            for (var oi = 0; oi < opts.length; oi++) opts[oi].classList.remove('keyboard-focus');
-        }
-        document.addEventListener('keydown', function(e) {
-            if (window.innerWidth <= 768) return;           // 仅桌面端
-            if (appState !== 'Quiz' && appState !== 'Review') return;
-            if (isDrawerOpen) return;
-            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
-            if (isExamFinished) return;
-
-            var opts = _kbGetOptions();
-            if (!opts.length) return;
-
-            // 背题已锁定不响应
-            var qData = quizData[currentQuestionIndex];
-            if (isMemorizeMode && hasAnswered(userAnswers[currentQuestionIndex])) {
-                var allLocked = true;
-                for (var oi = 0; oi < opts.length; oi++) { if (!opts[oi].classList.contains('memorize-disabled')) { allLocked = false; break; } }
-                if (allLocked) return;
-            }
-
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                _kbFocusIdx = (e.key === 'ArrowDown') ? Math.min(_kbFocusIdx + 1, opts.length - 1) : Math.max(_kbFocusIdx - 1, 0);
-                _kbApplyFocus();
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                var focused = opts[_kbFocusIdx];
-                if (focused && !focused.classList.contains('memorize-disabled')) {
-                    handleOptionClick(currentQuestionIndex, focused.dataset.optionValue, focused);
-                }
-            } else if (e.key === 'ArrowLeft') {
-                e.preventDefault(); goToPreviousQuestion();
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault(); goToNextQuestion();
-            } else if (e.key === ' ') {
-                e.preventDefault(); toggleAnswerCard();
-            }
-        });
 
         // 全局异常捕获：出错时 toast 提示而非静默崩溃
         window.onerror = function(msg) {
