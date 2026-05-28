@@ -23,6 +23,9 @@
         // V15.0: 背题模式答对自动跳转
         let isAutoAdvance = false;
         let autoAdvanceTimer = null;
+        // 错题回插
+        var isWrongReinsert = false;
+        var _wrongQueue = null;
         // V17.0: 设置抽屉状态 & 题库列表折叠状态
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
@@ -93,7 +96,8 @@
                 isMemorizeMode: isMemorizeMode,
                 isShuffleQuestions: isShuffleQuestions,
                 isShuffleOptions: isShuffleOptions,
-                isAutoAdvance: isAutoAdvance
+                isAutoAdvance: isAutoAdvance,
+                isWrongReinsert: isWrongReinsert
             };
             try {
                 localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -111,6 +115,7 @@
                     if (typeof settings.isShuffleQuestions === 'boolean') isShuffleQuestions = settings.isShuffleQuestions;
                     if (typeof settings.isShuffleOptions === 'boolean') isShuffleOptions = settings.isShuffleOptions;
                     if (typeof settings.isAutoAdvance === 'boolean') isAutoAdvance = settings.isAutoAdvance;
+                    if (typeof settings.isWrongReinsert === 'boolean') isWrongReinsert = settings.isWrongReinsert;
                 }
             } catch(e) {
                 console.error('加载设置失败:', e);
@@ -162,6 +167,11 @@
             if (aToggle) {
                 if (isAutoAdvance) aToggle.classList.add('active');
                 else aToggle.classList.remove('active');
+            }
+            var wToggle = document.getElementById('wrong-reinsert-toggle');
+            if (wToggle) {
+                if (isWrongReinsert) wToggle.classList.add('active');
+                else wToggle.classList.remove('active');
             }
         }
 
@@ -439,6 +449,18 @@
             saveSettings();
         };
 
+        window.toggleWrongReinsert = function() {
+            isWrongReinsert = !isWrongReinsert;
+            var toggleEl = document.getElementById('wrong-reinsert-toggle');
+            if (isWrongReinsert) {
+                toggleEl.classList.add('active');
+            } else {
+                toggleEl.classList.remove('active');
+                _wrongQueue = null;
+            }
+            saveSettings();
+        };
+
         // =========================================================
         // C. 题库、进度与历史管理
         // =========================================================
@@ -591,6 +613,14 @@
                 }
 
                 isExamFinished = false;
+
+                // 错题回插：初始化队列
+                _wrongQueue = null;
+                if (isMemorizeMode && isWrongReinsert) {
+                    _wrongQueue = [];
+                    for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi);
+                }
+
                 setAppState('Quiz');
 
                 console.log((isMemorizeMode ? '背题模式 - ' : '普通模式 - ') +
@@ -649,6 +679,13 @@
             seconds = 0;
             currentQuestionIndex = 0;
             isExamFinished = false;
+
+            // 错题回插：重新初始化队列
+            _wrongQueue = null;
+            if (isMemorizeMode && isWrongReinsert) {
+                _wrongQueue = [];
+                for (var qi2 = 0; qi2 < quizData.length; qi2++) _wrongQueue.push(qi2);
+            }
 
             localStorage.removeItem('PROGRESS_' + currentQuizName + '_' + currentQuizHash);
 
@@ -1298,7 +1335,9 @@
 
             var delay = 500 + Math.floor(Math.random() * 300);
             autoAdvanceTimer = setTimeout(function() {
-                if (currentQuestionIndex < quizData.length - 1) {
+                if (_wrongQueue && _wrongQueue.length > 0) {
+                    goToNextQuestion();
+                } else if (!_wrongQueue && currentQuestionIndex < quizData.length - 1) {
                     goToNextQuestion();
                 }
             }, delay);
@@ -1311,6 +1350,15 @@
         function renderQuestion(index) {
             clearAutoAdvanceTimer();
             window.scrollTo(0, 0);
+
+            // 错题回插：用队列第一项覆盖
+            if (_wrongQueue && _wrongQueue.length > 0) {
+                index = _wrongQueue[0];
+            } else if (_wrongQueue && _wrongQueue.length === 0 && !isExamFinished) {
+                // 队列空 = 全部答对
+                handleSubmit();
+                return;
+            }
 
             currentQuestionIndex = index;
             var questionData = quizData[index];
@@ -1467,6 +1515,18 @@
                 } finally {
                     _memorizeLockIndex = -1;
                 }
+
+                // 错题回插：答错时随机插回队列
+                if (isWrongReinsert && _wrongQueue) {
+                    var isRight = checkAnswer(questionData, userAnswers[qIndex]);
+                    if (isRight) {
+                        _wrongQueue.shift();
+                    } else {
+                        var cur = _wrongQueue.shift();
+                        var pos = _wrongQueue.length > 0 ? Math.floor(Math.random() * (_wrongQueue.length + 1)) : 0;
+                        _wrongQueue.splice(pos, 0, cur);
+                    }
+                }
             }
 
             updateCardStatus(qIndex + 1, userAnswers[qIndex]);
@@ -1522,15 +1582,11 @@
         function handleSwipe(deltaX, deltaY) {
             if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && Math.abs(deltaX) > swipeMinDistance) {
                 if (deltaX < 0) {
-                    if (currentQuestionIndex < quizData.length - 1) {
-                        clearAutoAdvanceTimer();
-                        renderQuestion(currentQuestionIndex + 1);
-                    }
+                    var canNext = _wrongQueue ? (_wrongQueue.length > 0) : (currentQuestionIndex < quizData.length - 1);
+                    if (canNext) { clearAutoAdvanceTimer(); renderQuestion(currentQuestionIndex + 1); }
                 } else if (deltaX > 0) {
-                    if (currentQuestionIndex > 0) {
-                        clearAutoAdvanceTimer();
-                        renderQuestion(currentQuestionIndex - 1);
-                    }
+                    var canPrev = !_wrongQueue && currentQuestionIndex > 0;
+                    if (canPrev) { clearAutoAdvanceTimer(); renderQuestion(currentQuestionIndex - 1); }
                 }
             }
         }
@@ -1607,6 +1663,7 @@
 
         window.goToPreviousQuestion = function() {
             clearAutoAdvanceTimer();
+            if (_wrongQueue) return; // 错题回插模式禁用回退
             if (currentQuestionIndex > 0) {
                 renderQuestion(currentQuestionIndex - 1);
             }
@@ -1614,7 +1671,9 @@
 
         window.goToNextQuestion = function() {
             clearAutoAdvanceTimer();
-            if (currentQuestionIndex < quizData.length - 1) {
+            if (_wrongQueue && _wrongQueue.length > 0) {
+                renderQuestion(_wrongQueue[0]);
+            } else if (!_wrongQueue && currentQuestionIndex < quizData.length - 1) {
                 renderQuestion(currentQuestionIndex + 1);
             }
         };
