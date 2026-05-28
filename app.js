@@ -1935,21 +1935,6 @@
                 showToast('⚠️ 浏览器本地存储不可用（可能处于隐私模式），题库和进度将无法保存', 'error');
             }
 
-            // 启动自检：清理损坏的题库数据
-            try {
-                var quizList = JSON.parse(localStorage.getItem(QUIZ_LIST_KEY) || '[]');
-                var cleaned = quizList.filter(function(q) {
-                    if (!q.name || !q.hash || !q.dataKey) return false;
-                    var raw = localStorage.getItem(q.dataKey);
-                    if (!raw) return false;
-                    return true;
-                });
-                if (cleaned.length < quizList.length) {
-                    localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(cleaned));
-                    showToast('已自动清理 ' + (quizList.length - cleaned.length) + ' 条损坏的题库记录', 'warn');
-                }
-            } catch (e) {}
-
             setAppState('Home');
         });
 
