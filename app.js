@@ -1200,7 +1200,6 @@
 
         // V20.0: 统计页面 — 按题库归类折叠（Accordion）
         function renderStatsPage() {
-            try {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
             lastScoreDisplay.textContent = '--';
@@ -1216,156 +1215,62 @@
             var hasAnyHistory = false;
 
             quizList.forEach(function(quiz, quizIdx) {
-                var historyKey = 'HISTORY_' + quiz.name + '_' + quiz.hash;
-                var history = JSON.parse(localStorage.getItem(historyKey));
                 globalTotalQuestions += quiz.questionCount;
-
                 var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
-                var savedData = localStorage.getItem(activeKey);
+                try { var sd = localStorage.getItem(activeKey); if (sd) { var d = JSON.parse(sd); if (d.userAnswers) globalAnswered += d.userAnswers.filter(function(a){return hasAnswered(a);}).length; } } catch(e) {}
 
-                if (savedData) {
-                    try {
-                        var data = JSON.parse(savedData);
-                        if (data.userAnswers && Array.isArray(data.userAnswers)) {
-                            globalAnswered += data.userAnswers.filter(function(a) {
-                                return hasAnswered(a);
-                            }).length;
-                        }
-                    } catch(e) {}
-                }
-
-                // 先扫描拆分历史
-                var splitPrefix = 'HISTORY_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
-                var splitKeys = [], splitRecords = [];
-                for (var sk = 0; sk < localStorage.length; sk++) {
-                    var lk = localStorage.key(sk);
-                    if (lk && lk.indexOf(splitPrefix) === 0) splitKeys.push(lk);
-                }
-                for (var si = 0; si < splitKeys.length; si++) {
-                    try {
-                        var spHist = JSON.parse(localStorage.getItem(splitKeys[si]));
-                        if (spHist && spHist.length) {
-                            splitRecords.push({ key: splitKeys[si].replace(splitPrefix, ''), data: spHist });
-                        }
-                    } catch(e) {}
-                }
-
-                if ((history && history.length > 0) || splitRecords.length > 0) {
-                    hasAnyHistory = true;
-
-                    // 创建折叠卡片容器
-                    var accordion = document.createElement('div');
-                    accordion.className = 'stats-accordion';
-
-                    // 折叠卡片头部
-                    var header = document.createElement('div');
-                    header.className = 'stats-accordion-header';
-                    header.onclick = function() { toggleAccordion(this); };
-                    var totalRecords = (history ? history.length : 0) + splitRecords.length;
-                    header.innerHTML = '\
-                        <span class="material-icons accordion-icon">chevron_right</span>\
-                        <span class="accordion-title">' + quiz.name + '</span>\
-                        <span class="accordion-badge">最近 ' + totalRecords + ' 次</span>\
-                    ';
-
-                    // 折叠卡片内容区
-                    var body = document.createElement('div');
-                    body.className = 'stats-accordion-body';
-
-                    // 渲染该题库的最近5次历史记录
-                    if (history) history.forEach(function(record, hIdx) {
-                        var total = record.quizData.length;
-                        var correctCount = 0;
-
-                        record.quizData.forEach(function(q, qIdx) {
-                            if (checkAnswer(q, record.userAnswers[qIdx])) {
-                                correctCount++;
+                // 收集所有历史（整本题 + 拆分）
+                var allRecords = [];
+                try {
+                    var historyKey = 'HISTORY_' + quiz.name + '_' + quiz.hash;
+                    var h = JSON.parse(localStorage.getItem(historyKey));
+                    if (h && h.length) { for (var hi = 0; hi < h.length; hi++) allRecords.push({ record: h[hi], label: '', hash: quiz.hash }); }
+                } catch(e) {}
+                try {
+                    var sp = 'HISTORY_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                    for (var k = 0; k < localStorage.length; k++) {
+                        var key = localStorage.key(k);
+                        if (key && key.indexOf(sp) === 0) {
+                            var sh = JSON.parse(localStorage.getItem(key));
+                            if (sh && sh.length) {
+                                var rl = key.replace(sp, '');
+                                var spHash = quiz.hash + '_SPLIT_' + rl;
+                                for (var hi = 0; hi < sh.length; hi++) allRecords.push({ record: sh[hi], label: '📋 ' + rl + ' ', hash: spHash });
                             }
-                        });
-
-                        var wrongCount = total - correctCount;
-                        var score = ((correctCount / total) * 100).toFixed(1);
-                        var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
-                        var dateStr = new Date(record.timestamp).toLocaleString();
-
-                        // 第一个题库的第一条记录作为"上次测试得分"
-                        if (quizIdx === 0 && hIdx === 0) {
-                            lastScoreDisplay.innerHTML = score + '分 (用时 ' + timeStr + ')';
-                            lastScoreDisplay.style.color = score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
                         }
-
-                        var safeNameJs2 = escapeJsStr(quiz.name);
-                        var safeHashJs2 = escapeJsStr(quiz.hash);
-                        var historyCard = document.createElement('div');
-                        historyCard.className = 'history-card';
-                        historyCard.innerHTML = '\
-                            <button class="delete-history-btn" onclick="event.stopPropagation(); deleteHistoryRecord(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ', this)" title="删除此条记录">\
-                                <span class="material-icons">delete</span>\
-                            </button>\
-                            <p style="margin: 0; font-size: 0.9em; padding-right: 35px;">\
-                                <strong>得分: <span style="color: ' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> \
-                                | 对/错: ' + correctCount + '/' + wrongCount + ' \
-                                | 用时: ' + timeStr + ' \
-                                <br>\
-                                <span style="font-size: 0.8em; color: #999;">' + dateStr + '</span>\
-                            </p>\
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">\
-                                <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ')" class="btn-secondary" style="background-color: var(--color-primary); color: white;">\
-                                    🔎 回顾错题\
-                                </button>\
-                                <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ')" class="btn-secondary" style="background-color: var(--color-wrong); color: white;" ' + (wrongCount === 0 ? 'disabled' : '') + '>\
-                                    🔄 重做错题 (' + wrongCount + ')\
-                                </button>\
-                            </div>\
-                        ';
-                        body.appendChild(historyCard);
-                    });
-
-                    // 拆分历史渲染
-                    for (var si = 0; si < splitRecords.length; si++) {
-                        var rangeLabel = splitRecords[si].key;
-                        splitRecords[si].data.forEach(function(record, hIdx) {
-                                var total = record.quizData.length;
-                                var correctCount = 0;
-                                record.quizData.forEach(function(q, qIdx) { if (checkAnswer(q, record.userAnswers[qIdx])) correctCount++; });
-                                var wrongCount = total - correctCount;
-                                var score = ((correctCount / total) * 100).toFixed(1);
-                                var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
-                                var dateStr = new Date(record.timestamp).toLocaleString();
-                                var splitHash = quiz.hash + '_SPLIT_' + rangeLabel;
-                                var safeSplitHashJs = escapeJsStr(splitHash);
-                                var card = document.createElement('div');
-                                card.className = 'history-card';
-                                card.style.borderLeftColor = '#CFA84E';
-                                card.innerHTML = '\
-                                    <p style="margin:0;font-size:0.9em;padding-right:35px;">\
-                                        <strong style="color:#CFA84E;">📋 ' + rangeLabel + '</strong> \
-                                        | 得分: <span style="color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span> \
-                                        | 对/错: ' + correctCount + '/' + wrongCount + ' \
-                                        | 用时: ' + timeStr + ' \
-                                        <br><span style="font-size:0.8em;color:#999;">' + dateStr + '</span>\
-                                    </p>\
-                                    <div style="display:flex;gap:10px;margin-top:10px;">\
-                                        <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\', \'' + safeSplitHashJs + '\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-primary);color:white;">🔎 回顾错题</button>\
-                                        <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\', \'' + safeSplitHashJs + '\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-wrong);color:white;" ' + (wrongCount === 0 ? 'disabled' : '') + '>🔄 重做错题 (' + wrongCount + ')</button>\
-                                    </div>\
-                                ';
-                                body.appendChild(card);
-                            });
                     }
+                } catch(e) {}
 
-                    accordion.appendChild(header);
-                    accordion.appendChild(body);
-                    historyListContent.appendChild(accordion);
-                }
+                if (allRecords.length === 0) return;
+
+                hasAnyHistory = true;
+                var accordion = document.createElement('div'); accordion.className = 'stats-accordion';
+                var header = document.createElement('div'); header.className = 'stats-accordion-header';
+                header.onclick = function() { toggleAccordion(this); };
+                header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + allRecords.length + ' 次</span>';
+                var body = document.createElement('div'); body.className = 'stats-accordion-body';
+
+                allRecords.forEach(function(ar, ri) {
+                    var rec = ar.record, total = rec.quizData.length, correct = 0;
+                    for (var qi = 0; qi < total; qi++) { if (checkAnswer(rec.quizData[qi], rec.userAnswers[qi])) correct++; }
+                    var wrong = total - correct, score = ((correct / total) * 100).toFixed(1);
+                    var tStr = new Date(rec.seconds * 1000).toISOString().substr(11, 8), dStr = new Date(rec.timestamp).toLocaleString();
+                    if (quizIdx === 0 && ri === 0) { lastScoreDisplay.innerHTML = score + '分 (用时 ' + tStr + ')'; lastScoreDisplay.style.color = score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)'; }
+
+                    var card = document.createElement('div'); card.className = 'history-card';
+                    if (ar.label) card.style.borderLeftColor = '#CFA84E';
+                    var sn = escapeJsStr(quiz.name), sh = escapeJsStr(ar.hash);
+                    var btns = ar.label ? '' : '<button class=\"delete-history-btn\" onclick=\"event.stopPropagation();deleteHistoryRecord(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ',this)\" title=\"删除\"><span class=\"material-icons\">delete</span></button>';
+                    card.innerHTML = btns + '<p style=\"margin:0;font-size:0.9em;padding-right:35px;\"><strong>' + ar.label + '得分: <span style=\"color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';\">' + score + '分</span></strong> | 对/错: ' + correct + '/' + wrong + ' | 用时: ' + tStr + '<br><span style=\"font-size:0.8em;color:#999;\">' + dStr + '</span></p><div style=\"display:flex;gap:10px;margin-top:10px;\"><button onclick=\"reviewHistoricalQuiz(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ')\" class=\"btn-secondary\" style=\"background-color:var(--color-primary);color:white;\">🔎 回顾错题</button><button onclick=\"startReviewWrongQuiz(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ')\" class=\"btn-secondary\" style=\"background-color:var(--color-wrong);color:white;\" ' + (wrong === 0 ? 'disabled' : '') + '>🔄 重做错题 (' + wrong + ')</button></div>';
+                    body.appendChild(card);
+                });
+
+                accordion.appendChild(header); accordion.appendChild(body);
+                historyListContent.appendChild(accordion);
             });
 
-            if (!hasAnyHistory) {
-                historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
-            }
-
+            if (!hasAnyHistory) historyListContent.innerHTML = '<p style=\"color: var(--color-text-secondary);\">暂无历史记录。请先完成一次答题。</p>';
             document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
-            } catch(e) { showToast('统计加载异常，请刷新重试', 'error'); }
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
