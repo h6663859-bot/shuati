@@ -719,15 +719,15 @@
                     return qType && qType.indexOf('多选') !== -1 ? [] : null;
                 });
                 seconds = 0;
+                // 只有全新开始才乱序，加载进度时保持原序
+                if (isShuffleQuestions) quizData = shuffleArray(quizData);
+                if (isShuffleOptions) {
+                    quizData = initializeQuestionOptions(quizData);
+                } else {
+                    quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
+                }
             } else {
                 loadedProgress = true;
-            }
-
-            if (isShuffleQuestions) quizData = shuffleArray(quizData);
-            if (isShuffleOptions) {
-                quizData = initializeQuestionOptions(quizData);
-            } else {
-                quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
             }
 
             isExamFinished = false;
@@ -1157,7 +1157,8 @@
                     }
                 }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分</button>' : '';
+                var hasSplitProgress = splitKeys.length > 0;
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分' + (hasSplitProgress ? ' (有进度)' : '') + '</button>' : '';
 
                 quizCard.innerHTML = '\
                     <h4>\
