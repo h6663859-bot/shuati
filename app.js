@@ -1245,7 +1245,7 @@
                     }
                 }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:8px 14px;font-size:0.85em;font-weight:bold;border:none;border-radius:var(--border-radius-button);background:var(--color-primary);color:#fff;cursor:pointer;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:6px 10px;font-size:0.78em;font-weight:bold;border:none;border-radius:6px;background:var(--color-primary);color:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div');
                 quizCard.className = 'quiz-card-item';
