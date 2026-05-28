@@ -1303,6 +1303,44 @@
                         body.appendChild(historyCard);
                     });
 
+                    // 拆分历史扫描
+                    var splitPrefix = 'HISTORY_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                    var splitKeys = [];
+                    for (var sk = 0; sk < localStorage.length; sk++) {
+                        var lk = localStorage.key(sk);
+                        if (lk && lk.indexOf(splitPrefix) === 0) splitKeys.push(lk);
+                    }
+                    for (var si = 0; si < splitKeys.length; si++) {
+                        try {
+                            var spHist = JSON.parse(localStorage.getItem(splitKeys[si]));
+                            if (!spHist || !spHist.length) continue;
+                            hasAnyHistory = true;
+                            var rangeLabel = splitKeys[si].replace(splitPrefix, '');
+                            spHist.forEach(function(record, hIdx) {
+                                var total = record.quizData.length;
+                                var correctCount = 0;
+                                record.quizData.forEach(function(q, qIdx) { if (checkAnswer(q, record.userAnswers[qIdx])) correctCount++; });
+                                var wrongCount = total - correctCount;
+                                var score = ((correctCount / total) * 100).toFixed(1);
+                                var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
+                                var dateStr = new Date(record.timestamp).toLocaleString();
+                                var card = document.createElement('div');
+                                card.className = 'history-card';
+                                card.style.borderLeftColor = '#CFA84E';
+                                card.innerHTML = '\
+                                    <p style="margin:0;font-size:0.9em;padding-right:35px;">\
+                                        <strong style="color:#CFA84E;">📋 ' + rangeLabel + '</strong> \
+                                        | 得分: <span style="color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span> \
+                                        | 对/错: ' + correctCount + '/' + wrongCount + ' \
+                                        | 用时: ' + timeStr + ' \
+                                        <br><span style="font-size:0.8em;color:#999;">' + dateStr + '</span>\
+                                    </p>\
+                                ';
+                                body.appendChild(card);
+                            });
+                        } catch(e){}
+                    }
+
                     accordion.appendChild(header);
                     accordion.appendChild(body);
                     historyListContent.appendChild(accordion);
