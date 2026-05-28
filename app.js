@@ -1526,6 +1526,8 @@
                         var cur = _wrongQueue.shift();
                         var pos = _wrongQueue.length > 0 ? Math.floor(Math.random() * (_wrongQueue.length + 1)) : 0;
                         _wrongQueue.splice(pos, 0, cur);
+                        var qd = quizData[cur];
+                        userAnswers[cur] = qd.type.indexOf('多选') !== -1 ? [] : null;
                     }
                 }
             }
