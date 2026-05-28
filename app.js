@@ -1338,8 +1338,8 @@
                                         <br><span style="font-size:0.8em;color:#999;">' + dateStr + '</span>\
                                     </p>\
                                     <div style="display:flex;gap:10px;margin-top:10px;">\
-                                        <button onclick="reviewHistoricalQuiz(\\'' + safeNameJs2 + '\\', \\'' + safeSplitHashJs + '\\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-primary);color:white;">🔎 回顾错题</button>\
-                                        <button onclick="startReviewWrongQuiz(\\'' + safeNameJs2 + '\\', \\'' + safeSplitHashJs + '\\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-wrong);color:white;" ' + (wrongCount === 0 ? 'disabled' : '') + '>🔄 重做错题 (' + wrongCount + ')</button>\
+                                        <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\', \'' + safeSplitHashJs + '\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-primary);color:white;">🔎 回顾错题</button>\
+                                        <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\', \'' + safeSplitHashJs + '\', ' + hIdx + ')" class="btn-secondary" style="background-color:var(--color-wrong);color:white;" ' + (wrongCount === 0 ? 'disabled' : '') + '>🔄 重做错题 (' + wrongCount + ')</button>\
                                     </div>\
                                 ';
                                 body.appendChild(card);
