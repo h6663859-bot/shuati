@@ -498,8 +498,8 @@
         window.closeSplitModal = function() {
             document.getElementById('split-modal-overlay').style.display = 'none';
         };
-        function _getSplitKey(start, end) {
-            return currentQuizName + '_' + currentQuizHash + '_SPLIT_' + start + '-' + end;
+        function _getSplitKey(name, hash, start, end) {
+            return name + '_' + hash + '_SPLIT_' + start + '-' + end;
         }
         window.startSplitQuiz = function(type) {
             var quizList = getQuizList();
@@ -547,8 +547,8 @@
                 }
 
                 // 恢复拆分进度
-                var splitKey = _getSplitKey(startIdx, endIdx);
-                var sp = localStorage.getItem('PROGRESS_' + splitKey);
+                var progKey = 'PROGRESS_' + currentQuizName + '_' + currentQuizHash;
+                var sp = localStorage.getItem(progKey);
                 if (sp) { try { var dp = JSON.parse(sp); quizData = dp.quizData; userAnswers = dp.userAnswers; seconds = dp.seconds || 0; } catch(e){} }
 
                 if (isDrawerOpen) toggleSettingsDrawer();
@@ -1266,14 +1266,12 @@
                     info.innerHTML = '<strong>' + escapeHtml(ar.label) + '得分: <span style=\"color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';\">' + score + '分</span></strong> | 对/错: ' + correct + '/' + wrong + ' | 用时: ' + escapeHtml(tStr) + '<br><span style=\"font-size:0.8em;color:#999;\">' + escapeHtml(dStr) + '</span>';
                     card.appendChild(info);
 
-                    if (!ar.label) {
-                        var delBtn = document.createElement('button');
-                        delBtn.className = 'delete-history-btn';
-                        delBtn.title = '删除此条记录';
-                        delBtn.innerHTML = '<span class=\"material-icons\">delete</span>';
-                        delBtn.onclick = (function(n,h,i){ return function(e){ e.stopPropagation(); deleteHistoryRecord(n,h,i,this); }; })(sn, sh, ri);
-                        card.appendChild(delBtn);
-                    }
+                    var delBtn = document.createElement('button');
+                    delBtn.className = 'delete-history-btn';
+                    delBtn.title = '删除此条记录';
+                    delBtn.innerHTML = '<span class=\"material-icons\">delete</span>';
+                    delBtn.onclick = (function(n,h,i){ return function(e){ e.stopPropagation(); deleteHistoryRecord(n,h,i,this); }; })(sn, sh, ri);
+                    card.appendChild(delBtn);
 
                     var btnRow = document.createElement('div');
                     btnRow.style.cssText = 'display:flex;gap:10px;margin-top:10px;';
