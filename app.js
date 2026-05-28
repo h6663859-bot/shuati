@@ -452,6 +452,7 @@
         window.toggleWrongReinsert = function() {
             isWrongReinsert = !isWrongReinsert;
             var toggleEl = document.getElementById('wrong-reinsert-toggle');
+            if (!toggleEl) return;
             if (isWrongReinsert) {
                 toggleEl.classList.add('active');
             } else {
