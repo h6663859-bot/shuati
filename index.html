@@ -37,10 +37,19 @@
          <h1>刷题 (V21.0)</h1>
     </header>
 
-    <!-- V20.5：暗色模式切换 -->
-    <button id="dark-mode-btn" onclick="toggleDarkMode()" title="切换暗色模式" style="position:fixed;top:12px;right:66px;z-index:1500;width:40px;height:40px;border-radius:50%;border:2px solid var(--color-border-light);background:var(--color-card-bg);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:all 0.25s;">
-        <span class="material-icons" style="font-size:22px;">dark_mode</span>
+    <!-- 调色板 -->
+    <button id="palette-btn" onclick="togglePalettePopup()" title="切换主题色调" style="position:fixed;top:12px;right:66px;z-index:1500;width:40px;height:40px;border-radius:50%;border:2px solid var(--color-border-light);background:var(--color-card-bg);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:all 0.25s;">
+        <span class="material-icons" style="font-size:22px;">palette</span>
     </button>
+    <div id="palette-popup" style="display:none;position:fixed;top:58px;right:16px;z-index:1600;background:var(--color-card-bg);border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(0,0,0,0.15);border:1px solid var(--color-border-light);">
+        <div class="palette-row">
+            <div class="palette-dot active" onclick="setTheme(0)" style="background:linear-gradient(135deg,#003153,#6E8B74);" title="普鲁士蓝"></div>
+            <div class="palette-dot" onclick="setTheme(1)" style="background:linear-gradient(135deg,#C75B39,#7A9A7E);" title="暖橙"></div>
+            <div class="palette-dot" onclick="setTheme(2)" style="background:linear-gradient(135deg,#2E5A3E,#6B8C7C);" title="森林绿"></div>
+            <div class="palette-dot" onclick="setTheme(3)" style="background:linear-gradient(135deg,#4A3A6E,#8B7E9E);" title="薰衣草紫"></div>
+            <div class="palette-dot" onclick="setTheme(4)" style="background:linear-gradient(135deg,#3A4048,#6E8B74);" title="石墨灰"></div>
+        </div>
+    </div>
 
     <!-- V17.0：右上角设置齿轮 -->
     <button id="settings-gear-btn" onclick="toggleSettingsDrawer()" title="设置">
@@ -65,15 +74,15 @@
                     <div class="mode-option selected" onclick="selectMode(this, 'normal')">
                         <input type="radio" name="quizMode" value="normal" id="mode-normal" checked>
                         <div>
-                            <div class="mode-title"><span class="material-icons" style="font-size: 18px; vertical-align: middle;">edit_note</span> 普通刷题模式</div>
-                            <div class="mode-desc">点击选项选中答案，全部完成后点击「交卷」按钮统一评分与显示解析</div>
+                            <div class="mode-title"><span class="material-icons" style="font-size: 18px; vertical-align: middle;">edit_note</span> 刷题模式</div>
+                            
                         </div>
                     </div>
                     <div class="mode-option" onclick="selectMode(this, 'memorize')">
                         <input type="radio" name="quizMode" value="memorize" id="mode-memorize">
                         <div>
                             <div class="mode-title"><span class="material-icons" style="font-size: 18px; vertical-align: middle;">visibility</span> 背题模式</div>
-                            <div class="mode-desc">点击选项后即时显示对错判定和解析，适合快速记忆与复习</div>
+                            
                         </div>
                     </div>
                 </div>
@@ -82,13 +91,13 @@
             <!-- V15.0: 拆分后的独立随机乱序开关 -->
             <div class="shuffle-section">
                 <div class="section-title">
-                    <span class="material-icons">shuffle</span> 随机乱序控制
+                    <span class="material-icons">shuffle</span> 乱序设置
                 </div>
                 <div class="indie-toggle-row active" id="shuffle-questions-toggle" onclick="toggleShuffleQuestions()">
                     <span class="material-icons indie-icon">format_list_numbered</span>
                     <div class="indie-info">
-                        <div class="indie-title">随机打乱题目顺序</div>
-                        <div class="indie-desc">开启后进入练习页面时，所有题目的先后顺序随机排列</div>
+                        <div class="indie-title">打乱题目顺序</div>
+                        
                     </div>
                     <div class="toggle-track">
                         <div class="toggle-thumb"></div>
@@ -97,8 +106,8 @@
                 <div class="indie-toggle-row active" id="shuffle-options-toggle" onclick="toggleShuffleOptions()">
                     <span class="material-icons indie-icon">swap_vert</span>
                     <div class="indie-info">
-                        <div class="indie-title">随机打乱选项顺序</div>
-                        <div class="indie-desc">开启后每道题的 A/B/C/D 选项顺序随机排列</div>
+                        <div class="indie-title">打乱选项顺序</div>
+                        
                     </div>
                     <div class="toggle-track">
                         <div class="toggle-thumb"></div>
@@ -109,12 +118,21 @@
                 <div class="auto-advance-row" id="auto-advance-toggle" onclick="toggleAutoAdvance()">
                     <span class="material-icons auto-icon">fast_forward</span>
                     <div class="auto-info">
-                        <div class="auto-title">答对自动跳转下一题</div>
-                        <div class="auto-desc">仅在背题模式生效：答对后延迟0.6秒自动切换到下一题</div>
+                        <div class="auto-title">答对自动下一题</div>
+                        
                     </div>
                     <div class="toggle-track">
                         <div class="toggle-thumb"></div>
                     </div>
+                </div>
+
+                <div class="auto-advance-row" id="wrong-reinsert-toggle" onclick="toggleWrongReinsert()">
+                    <span class="material-icons auto-icon">replay</span>
+                    <div class="auto-info">
+                        <div class="auto-title">错题随机回插</div>
+                        
+                    </div>
+                    <div class="toggle-track"><div class="toggle-thumb"></div></div>
                 </div>
             </div>
         </div>
@@ -125,33 +143,33 @@
             <section id="home-page">
                 <div class="card">
                      <h2 style="color: var(--color-text-main);">
-                         <span class="material-icons">menu_book</span> 已导入题库
+                         <span class="material-icons">menu_book</span> 题库
                      </h2>
                      <div id="quiz-list-scroll-wrapper">
                          <div id="quiz-list-container">
                              <div style="text-align:center;padding:30px 0;">
                         <span class="material-icons" style="font-size:48px;color:#CCC;display:block;margin-bottom:12px;">menu_book</span>
-                        <p style="color: var(--color-text-secondary);margin:0;">还没有题库，点击下方按钮导入</p>
-                        <p style="color:#BBB;font-size:0.78em;margin:4px 0 0;">支持 .txt / .docx / .pdf</p>
+                        <p style="color: var(--color-text-secondary);margin:0;">暂无题库，点击导入</p>
+                        
                     </div>
                          </div>
                      </div>
                      <div id="quiz-list-collapse-bar" style="display: none;">
                          <button id="quiz-list-collapse-btn" onclick="toggleQuizListCollapse()">
                              <span class="material-icons">unfold_less</span>
-                             <span id="quiz-list-collapse-text">收起题库列表</span>
+                             <span id="quiz-list-collapse-text">收起</span>
                          </button>
                      </div>
                 </div>
                 <div id="home-controls">
                     <button class="cta-btn cta-primary" onclick="uploadNewFile()">
-                        <span class="material-icons" style="margin-right: 5px;">cloud_upload</span> 上传新题库
+                        <span class="material-icons" style="margin-right: 5px;">cloud_upload</span> 导入题库
                     </button>
                     <button class="cta-btn cta-warning" onclick="clearLocalStorageAndReload();">
-                        <span class="material-icons" style="margin-right: 5px;">delete_forever</span> 清空本地数据
+                        <span class="material-icons" style="margin-right: 5px;">delete_forever</span> 清空数据
                     </button>
                 </div>
-                <div style="text-align: center; margin-top: 15px; font-size: 0.8em; color: #999; letter-spacing: 1px;">V21.0 © L.Y.M</div>
+                <div style="text-align: center; margin-top: 15px; font-size: 0.8em; color: #999; letter-spacing: 1px;">V23.0 © L.Y.M</div>
             </section>
 
             <section id="quiz-area" style="display: none;">
@@ -168,22 +186,22 @@
 
                 <div id="memorize-banner" class="memorize-banner" style="display: none;">
                     <span class="material-icons">visibility</span>
-                    <span>背题模式已开启 — 点击选项后即时显示正确答案与解析</span>
+                    <span>背题模式已开启</span>
                 </div>
 
                 <div id="exam-result-summary" style="display: none;"></div>
                 <div id="question-display-area"></div>
-                <div class="swipe-hint" id="swipe-hint">← 左滑下一题 | 右滑上一题 →</div>
+                <div class="swipe-hint" id="swipe-hint">← 滑动切题 →</div>
             </section>
 
             <section id="stats-page" style="display: none;">
-                <h2><span class="material-icons">bar_chart</span> 统计分析与历史回顾</h2>
+                <h2><span class="material-icons">bar_chart</span> 统计</h2>
                 <div id="stats-summary" class="card">
                     <p>总览：<strong id="global-stats">--</strong></p>
                     <p>上次测试得分：<strong id="last-score" style="color: var(--color-primary);">--</strong></p>
                 </div>
                 <div id="history-review-container" class="card" style="margin-top: 20px;">
-                    <h3><span class="material-icons" style="color: var(--color-accent-a); font-size: 1.2em;">history</span> 详细历史记录（按题库分类）</h3>
+                    <h3><span class="material-icons" style="color: var(--color-accent-a); font-size: 1.2em;">history</span> 历史记录</h3>
                     <div id="history-list-content">
                          <p style="color: var(--color-text-secondary);">暂无历史记录。</p>
                     </div>
@@ -211,15 +229,15 @@
     <nav id="bottom-nav">
         <a href="javascript:void(0)" class="nav-item active" data-state="Home" onclick="handleNavClick(this)">
             <span class="material-icons">home</span>
-            <span>首页</span>
+            
         </a>
         <a href="javascript:void(0)" class="nav-item" data-state="Quiz" onclick="handleNavClick(this)">
             <span class="material-icons">play_circle</span>
-            <span>练习</span>
+            
         </a>
         <a href="javascript:void(0)" class="nav-item" data-state="Stats" onclick="handleNavClick(this)">
             <span class="material-icons">bar_chart</span>
-            <span>统计</span>
+            
         </a>
     </nav>
 
@@ -229,6 +247,20 @@
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <p id="loading-text">正在解析文件...</p>
+        </div>
+    </div>
+
+    <div id="split-modal-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:none;align-items:center;justify-content:center;" onclick="closeSplitModal()">
+        <div id="split-modal" style="background:var(--color-card-bg);border-radius:14px;padding:24px;max-width:400px;width:90vw;box-shadow:0 8px 36px rgba(0,0,0,0.22);" onclick="event.stopPropagation()">
+            <h2 style="margin:0 0 16px;font-size:1.1em;color:var(--color-text-main);">拆分答题</h2>
+            <div id="split-modal-quiz-name" style="color:var(--color-text-secondary);font-size:0.85em;margin-bottom:14px;"></div>
+            <div style="display:flex;gap:8px;align-items:center;margin:8px 0;">
+                <input id="split-start" type="number" min="1" placeholder="起始题号" style="flex:1;padding:10px;border:1px solid var(--color-border-light);border-radius:8px;font-size:0.9em;background:var(--color-card-bg);color:var(--color-text-main);">
+                <span style="color:var(--color-text-secondary);">-</span>
+                <input id="split-end" type="number" min="1" placeholder="结束题号" style="flex:1;padding:10px;border:1px solid var(--color-border-light);border-radius:8px;font-size:0.9em;background:var(--color-card-bg);color:var(--color-text-main);">
+                <button onclick="startSplitQuiz()" class="btn-secondary" style="flex-shrink:0;">确定</button>
+            </div>
+            <button onclick="closeSplitModal()" class="btn-secondary" style="width:100%;margin-top:6px;">取消</button>
         </div>
     </div>
 

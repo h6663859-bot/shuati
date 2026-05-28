@@ -23,6 +23,8 @@
         // V15.0: 背题模式答对自动跳转
         let isAutoAdvance = false;
         let autoAdvanceTimer = null;
+        let isWrongReinsert = false;
+        var _wrongQueue = null;
         // V17.0: 设置抽屉状态 & 题库列表折叠状态
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
@@ -59,33 +61,7 @@
         const quizListCollapseText = document.getElementById('quiz-list-collapse-text');
 
         // =========================================================
-        // A. V20.5: 暗色模式切换
-        // =========================================================
-        var isDarkMode = false;
-        window.toggleDarkMode = function() {
-            isDarkMode = !isDarkMode;
-            var html = document.documentElement;
-            var icon = document.querySelector('#dark-mode-btn .material-icons');
-            if (isDarkMode) {
-                html.setAttribute('data-theme', 'dark');
-                if (icon) icon.textContent = 'light_mode';
-            } else {
-                html.removeAttribute('data-theme');
-                if (icon) icon.textContent = 'dark_mode';
-            }
-            try { localStorage.setItem('DARK_MODE', isDarkMode ? '1' : '0'); } catch(e) {}
-        };
-        (function() {
-            try { isDarkMode = localStorage.getItem('DARK_MODE') === '1'; } catch(e) {}
-            if (isDarkMode) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                var icon = document.querySelector('#dark-mode-btn .material-icons');
-                if (icon) icon.textContent = 'light_mode';
-            }
-        })();
-
-        // =========================================================
-        // B. V20.0: 设置持久化（LocalStorage 读写）
+        // A. V20.0: 设置持久化（LocalStorage 读写）
         // =========================================================
 
         function saveSettings() {
@@ -93,7 +69,8 @@
                 isMemorizeMode: isMemorizeMode,
                 isShuffleQuestions: isShuffleQuestions,
                 isShuffleOptions: isShuffleOptions,
-                isAutoAdvance: isAutoAdvance
+                isAutoAdvance: isAutoAdvance,
+                isWrongReinsert: isWrongReinsert
             };
             try {
                 localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -111,6 +88,7 @@
                     if (typeof settings.isShuffleQuestions === 'boolean') isShuffleQuestions = settings.isShuffleQuestions;
                     if (typeof settings.isShuffleOptions === 'boolean') isShuffleOptions = settings.isShuffleOptions;
                     if (typeof settings.isAutoAdvance === 'boolean') isAutoAdvance = settings.isAutoAdvance;
+                    if (typeof settings.isWrongReinsert === 'boolean') isWrongReinsert = settings.isWrongReinsert;
                 }
             } catch(e) {
                 console.error('加载设置失败:', e);
@@ -162,6 +140,11 @@
             if (aToggle) {
                 if (isAutoAdvance) aToggle.classList.add('active');
                 else aToggle.classList.remove('active');
+            }
+            var wToggle = document.getElementById('wrong-reinsert-toggle');
+            if (wToggle) {
+                if (isWrongReinsert) wToggle.classList.add('active');
+                else wToggle.classList.remove('active');
             }
         }
 
@@ -267,22 +250,15 @@
             });
 
             var isMobile = window.innerWidth <= 768;
-            if (!isMobile) {
-                answerCardArea.style.position = 'sticky';
-                answerCardArea.classList.add('visible');
-                isCardVisible = true;
-            } else {
-                answerCardArea.style.position = 'fixed';
-            }
+            answerCardArea.style.position = isMobile ? 'fixed' : 'sticky';
 
             var swipeHint = document.getElementById('swipe-hint');
             if (swipeHint) swipeHint.style.display = 'none';
 
             if (newState === 'Home') {
                 homePage.style.display = 'block';
-                if (isMobile) {
-                    answerCardArea.classList.remove('visible');
-                }
+                answerCardArea.classList.remove('visible');
+                isCardVisible = false;
                 renderHomePage();
             } else if (newState === 'Quiz' || newState === 'Review') {
                 quizArea.style.display = 'block';
@@ -305,9 +281,8 @@
                 initQuizUI();
             } else if (newState === 'Stats') {
                 statsPage.style.display = 'block';
-                if (isMobile) {
-                    answerCardArea.classList.remove('visible');
-                }
+                answerCardArea.classList.remove('visible');
+                isCardVisible = false;
                 renderStatsPage();
             }
         };
@@ -374,11 +349,11 @@
             if (isQuizListCollapsed) {
                 quizListScrollWrapper.classList.add('collapsed');
                 quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
-                quizListCollapseText.textContent = '展开题库列表';
+                quizListCollapseText.textContent = '展开';
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
                 quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
-                quizListCollapseText.textContent = '收起题库列表';
+                quizListCollapseText.textContent = '收起';
             }
         };
 
@@ -387,7 +362,27 @@
         // =========================================================
         window.toggleAccordion = function(header) {
             var accordion = header.parentElement;
-            accordion.classList.toggle('open');
+            var body = accordion.querySelector('.stats-accordion-body');
+            if (accordion.classList.contains('open')) {
+                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
+                requestAnimationFrame(function(){ body.style.maxHeight = '0px'; });
+                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); accordion.classList.remove('open'); body.style.maxHeight = ''; });
+            } else {
+                accordion.classList.add('open');
+                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
+                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); body.style.maxHeight = ''; });
+            }
+        };
+
+        window.clearQuizStats = function(quizName, quizHash) {
+            if (!confirm('确定删除题库\u300c' + quizName + '\u300d的全部历史记录吗？此操作不可逆！')) return;
+            var p1 = 'HISTORY_' + quizName + '_' + quizHash;
+            var p2 = p1 + '_SPLIT_';
+            for (var k = 0; k < localStorage.length; k++) {
+                var lk = localStorage.key(k);
+                if (lk && (lk.indexOf(p2) === 0 || lk === p1)) localStorage.removeItem(lk);
+            }
+            renderStatsPage();
         };
 
         // =========================================================
@@ -439,6 +434,75 @@
             saveSettings();
         };
 
+        window.toggleWrongReinsert = function() {
+            isWrongReinsert = !isWrongReinsert;
+            var toggleEl = document.getElementById('wrong-reinsert-toggle');
+            if (!toggleEl) return;
+            if (isWrongReinsert) toggleEl.classList.add('active');
+            else { toggleEl.classList.remove('active'); _wrongQueue = null; }
+            saveSettings();
+        };
+
+        var THEME_COLORS = [
+            { primary:'#003153', a:'#6E8B74', b:'#FFC107' },
+            { primary:'#C75B39', a:'#7A9A7E', b:'#E8A840' },
+            { primary:'#2E5A3E', a:'#6B8C7C', b:'#D4A840' },
+            { primary:'#4A3A6E', a:'#8B7E9E', b:'#E0B860' },
+            { primary:'#3A4048', a:'#6E8B74', b:'#C8A040' }
+        ];
+        window.setTheme = function(idx) {
+            var t = THEME_COLORS[idx];
+            var r = document.querySelector(':root');
+            r.style.setProperty('--color-primary', t.primary);
+            r.style.setProperty('--color-accent-a', t.a);
+            r.style.setProperty('--color-accent-b', t.b);
+            var dots = document.querySelectorAll('#palette-popup .palette-dot');
+            for (var di = 0; di < dots.length; di++) dots[di].classList.toggle('active', di === idx);
+            try { localStorage.setItem('THEME_INDEX', idx); } catch(e) {}
+            document.getElementById('palette-popup').style.display = 'none';
+        };
+        window.togglePalettePopup = function() {
+            var p = document.getElementById('palette-popup');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        };
+        (function(){
+            try { var ti = parseInt(localStorage.getItem('THEME_INDEX')); if (ti >= 0 && ti < THEME_COLORS.length) setTheme(ti); } catch(e) {}
+        })();
+
+        var _splitQuizName = null, _splitQuizHash = null, _splitQuizCount = 0;
+        window.showSplitModal = function(qn, qh, cnt) {
+            _splitQuizName = qn; _splitQuizHash = qh; _splitQuizCount = cnt;
+            document.getElementById('split-modal-quiz-name').textContent = qn + ' (' + cnt + ' 题)';
+            document.getElementById('split-start').max = cnt; document.getElementById('split-end').max = cnt;
+            document.getElementById('split-start').value = ''; document.getElementById('split-end').value = '';
+            document.getElementById('split-modal-overlay').style.display = 'flex';
+        };
+        window.closeSplitModal = function() { document.getElementById('split-modal-overlay').style.display = 'none'; };
+        window.startSplitQuiz = function() {
+            var ql = getQuizList();
+            var tq = ql.find(function(q){return q.name===_splitQuizName&&q.hash===_splitQuizHash;});
+            if(!tq){alert('找不到该题库');return;}
+            var si = parseInt(document.getElementById('split-start').value)||1;
+            var ei = parseInt(document.getElementById('split-end').value)||_splitQuizCount;
+            if(si<1)si=1; if(ei>_splitQuizCount)ei=_splitQuizCount;
+            if(si>ei){alert('起始题号不能大于结束题号');return;}
+            closeSplitModal();
+            var raw = localStorage.getItem(tq.dataKey);
+            var cb = function(text){
+                var fd = parseQuizText(text); var sl = fd.slice(si-1, ei);
+                currentQuizName = _splitQuizName; currentQuizHash = _splitQuizHash + '_SPLIT_' + si + '-' + ei; currentQuestionIndex = 0;
+                var pk = 'PROGRESS_' + currentQuizName + '_' + currentQuizHash;
+                var sp = localStorage.getItem(pk);
+                if(sp){try{var dp=JSON.parse(sp);quizData=dp.quizData;userAnswers=dp.userAnswers;seconds=dp.seconds||0;}catch(e){}}
+                else { quizData=sl; if(isShuffleQuestions)quizData=shuffleArray(quizData); if(isShuffleOptions)quizData=initializeQuestionOptions(quizData); else quizData.forEach(function(q){if(!q.shuffledOptions)q.shuffledOptions=q.options.slice();}); userAnswers=new Array(quizData.length).fill(null).map(function(_,i){return quizData[i].type.indexOf('多选')!==-1?[]:null;}); seconds=0; }
+                isExamFinished=false; _wrongQueue=null;
+                if(isMemorizeMode&&isWrongReinsert){_wrongQueue=[];for(var qi=0;qi<quizData.length;qi++)_wrongQueue.push(qi);}
+                if(isDrawerOpen)toggleSettingsDrawer(); setAppState('Quiz');
+            };
+            if(!raw){showLoading('正在加载');_idb.get(tq.dataKey).then(function(d){hideLoading();if(d)cb(d);else alert('加载失败');}).catch(function(){hideLoading();alert('加载失败');});}
+            else cb(raw);
+        };
+
         // =========================================================
         // C. 题库、进度与历史管理
         // =========================================================
@@ -467,6 +531,7 @@
                     quizData: quizData,
                     userAnswers: userAnswers,
                     seconds: seconds,
+                    currentQuestionIndex: currentQuestionIndex,
                     timestamp: new Date().toISOString()
                 });
                 localStorage.setItem(activeKey, dataToSave);
@@ -486,6 +551,7 @@
                     quizData = data.quizData || [];
                     userAnswers = data.userAnswers || [];
                     seconds = data.seconds || 0;
+                    currentQuestionIndex = data.currentQuestionIndex || 0;
                     isExamFinished = false;
                     return true;
                 }
@@ -504,6 +570,16 @@
             }
         }
 
+        var _idb = (function(){
+            var db = null;
+            function open(){ return new Promise(function(ok,no){ var r=indexedDB.open('shuati_db',1); r.onupgradeneeded=function(){ r.result.createObjectStore('raw'); }; r.onsuccess=function(){ db=r.result; ok(); }; r.onerror=function(){ no(r.error); }; }); }
+            return {
+                set: function(k,v){ return open().then(function(){ return new Promise(function(ok,no){ var t=db.transaction('raw','readwrite').objectStore('raw').put(v,k); t.onsuccess=ok; t.onerror=no; }); }); },
+                get: function(k){ return open().then(function(){ return new Promise(function(ok,no){ var t=db.transaction('raw').objectStore('raw').get(k); t.onsuccess=function(){ ok(t.result); }; t.onerror=no; }); }); },
+                del: function(k){ return open().then(function(){ return new Promise(function(ok,no){ var t=db.transaction('raw','readwrite').objectStore('raw').delete(k); t.onsuccess=ok; t.onerror=no; }); }); }
+            };
+        })();
+
         function saveQuizToList(name, rawText, parsedData) {
             try {
                 var quizList = getQuizList();
@@ -514,13 +590,18 @@
 
                 if (existingIndex !== -1) {
                     var oldQuiz = quizList[existingIndex];
-                    localStorage.removeItem(oldQuiz.dataKey);
+                    try { localStorage.removeItem(oldQuiz.dataKey); } catch(e){}
+                    try { _idb.del(oldQuiz.dataKey); } catch(e){}
                     localStorage.removeItem('PROGRESS_' + oldQuiz.name + '_' + oldQuiz.hash);
                     localStorage.removeItem('HISTORY_' + oldQuiz.name + '_' + oldQuiz.hash);
                     quizList.splice(existingIndex, 1);
                 }
 
-                localStorage.setItem(dataKey, rawText);
+                try { _idb.set(dataKey, rawText); } catch(e2) {
+                    try { localStorage.setItem(dataKey, rawText); } catch(e3) {
+                        showToast('保存失败，存储空间不足', 'error'); return;
+                    }
+                }
 
                 quizList.unshift({
                     name: name,
@@ -561,46 +642,43 @@
 
             var rawText = localStorage.getItem(targetQuiz.dataKey);
 
-            if (rawText) {
-                var loadedProgress = false;
-
-                if (!loadActiveProgress(quizName, targetQuiz.hash)) {
-                    quizData = parseQuizText(rawText);
-
-                    userAnswers = new Array(quizData.length).fill(null).map(function(_, index) {
-                        var qType = quizData[index].type;
-                        return qType && qType.indexOf('多选') !== -1 ? [] : null;
-                    });
-                    seconds = 0;
-                } else {
-                    loadedProgress = true;
-                }
-
-                // V15.0: 根据独立开关分别处理乱序
-                if (isShuffleQuestions) {
-                    quizData = shuffleArray(quizData);
-                }
-                if (isShuffleOptions) {
-                    quizData = initializeQuestionOptions(quizData);
-                } else {
-                    quizData.forEach(function(q) {
-                        if (!q.shuffledOptions) {
-                            q.shuffledOptions = q.options.slice();
-                        }
-                    });
-                }
-
-                isExamFinished = false;
-                setAppState('Quiz');
-
-                console.log((isMemorizeMode ? '背题模式 - ' : '普通模式 - ') +
-                    (isShuffleQuestions ? '题目乱序已启用 - ' : '题目保持原序 - ') +
-                    (isShuffleOptions ? '选项乱序已启用 - ' : '选项保持原序 - ') +
-                    (loadedProgress ? '已加载题库「' + quizName + '」的上次进度，请继续作答！' : '已加载题库「' + quizName + '」，开始计时答题！'));
-
-            } else {
-                alert("错误：未能加载题库原始数据。");
+            if (!rawText) {
+                showLoading('正在加载题库...');
+                _idb.get(targetQuiz.dataKey).then(function(data){
+                    hideLoading();
+                    if (data) _startQuizWithRawText(quizName, targetQuiz, data);
+                    else alert("错误：未能加载题库原始数据。");
+                }).catch(function(){ hideLoading(); alert("错误：未能加载题库原始数据。"); });
+                return;
             }
+
+            _startQuizWithRawText(quizName, targetQuiz, rawText);
+        };
+
+        function _startQuizWithRawText(quizName, targetQuiz, rawText) {
+            currentQuizName = quizName;
+            currentQuizHash = targetQuiz.hash;
+            currentQuestionIndex = 0;
+
+            var loadedProgress = false;
+            if (!loadActiveProgress(quizName, targetQuiz.hash)) {
+                quizData = parseQuizText(rawText);
+                userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
+                    return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
+                });
+                seconds = 0;
+                if (isShuffleQuestions) quizData = shuffleArray(quizData);
+                if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
+                else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
+            } else { loadedProgress = true; }
+
+            isExamFinished = false;
+            _wrongQueue = null;
+            if (isMemorizeMode && isWrongReinsert) {
+                _wrongQueue = [];
+                for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi);
+            }
+            setAppState('Quiz');
         };
 
         window.confirmRestartQuiz = function() {
@@ -968,42 +1046,28 @@
             quizListCollapseBar.style.display = 'block';
 
             quizList.forEach(function(quiz) {
-                var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
-                var savedData = localStorage.getItem(activeKey);
-                var progressText = '未开始';
-                var startBtnText = '开始答题';
-                var answeredCount = 0;
-
-                if (savedData) {
-                    var data = JSON.parse(savedData);
-                    if (data.userAnswers && Array.isArray(data.userAnswers)) {
-                        answeredCount = data.userAnswers.filter(function(a) {
-                            return hasAnswered(a);
-                        }).length;
-                    }
-                    var remaining = quiz.questionCount - answeredCount;
-                    progressText = '已答 ' + answeredCount + ' 题 (剩余 ' + remaining + ' 题)';
-                    startBtnText = '继续答题';
-                }
-
                 var safeName = escapeHtml(quiz.name);
                 var safeNameJs = escapeJsStr(quiz.name);
                 var safeHashJs = escapeJsStr(quiz.hash);
-                var quizCard = document.createElement('div');
-                quizCard.className = 'quiz-card-item';
+
+                var bestTime = '', bestLabel = '', bestAns = 0, bestTotal = 0, bestKey = null;
+                try { var nd = JSON.parse(localStorage.getItem('PROGRESS_' + quiz.name + '_' + quiz.hash)); if (nd && nd.timestamp && nd.timestamp > bestTime) { bestTime = nd.timestamp; bestLabel = ''; bestTotal = nd.userAnswers ? nd.userAnswers.length : quiz.questionCount; bestAns = nd.userAnswers ? nd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash; } } catch(e) {}
+                var sp = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                for (var sk = 0; sk < localStorage.length; sk++) { var lk = localStorage.key(sk); if (lk && lk.indexOf(sp) === 0) { try { var sd = JSON.parse(localStorage.getItem(lk)); if (sd && sd.timestamp && sd.timestamp > bestTime) { bestTime = sd.timestamp; bestLabel = lk.replace(sp, ''); bestTotal = sd.userAnswers ? sd.userAnswers.length : 0; bestAns = sd.userAnswers ? sd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = lk; } } catch(e) {} } }
+
+                var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
+                if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\')'; } }
+
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+
+                var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
-                    <h4>\
-                        <span style="font-weight: 700;">' + safeName + '</span>\
-                        <button class="btn-secondary" style="background-color: transparent;" onclick="deleteQuiz(\'' + safeNameJs + '\', \'' + safeHashJs + '\')">\
-                            <span class="material-icons" style="font-size: 18px; color: var(--color-text-secondary);">delete</span>\
-                        </button>\
-                    </h4>\
+                    <h4><span style="font-weight:700;">' + safeName + '</span><button class="btn-secondary" style="background-color:transparent;" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons" style="font-size:18px;color:var(--color-text-secondary);">delete</span></button></h4>\
                     <p>总题数: ' + quiz.questionCount + '</p>\
-                    <p style="font-style: italic;">' + progressText + '</p>\
-                    <div class="quiz-actions">\
-                        <button class="cta-btn cta-primary" style="padding: 10px 15px; font-size: 0.9em; flex-grow: 1;" onclick="startQuiz(\'' + safeNameJs + '\')">\
-                            <span class="material-icons" style="font-size: 18px; margin-right: 5px;">play_arrow</span> ' + startBtnText + '\
-                        </button>\
+                    <p style="font-style:italic;">' + progressText + '</p>\
+                    <div class="quiz-actions" style="display:flex;gap:8px;">\
+                        <button class="cta-btn cta-primary" style="padding:10px 15px;font-size:0.9em;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;">play_arrow</span>' + startBtnText + '</button>\
+                        ' + splitBtn + '\
                     </div>\
                 ';
                 quizListContainer.appendChild(quizCard);
@@ -1014,17 +1078,13 @@
                 if (quizListCollapseBtn) {
                     quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
                 }
-                if (quizListCollapseText) {
-                    quizListCollapseText.textContent = '展开题库列表';
-                }
+                if (quizListCollapseText) { quizListCollapseText.textContent = '展开'; }
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
                 if (quizListCollapseBtn) {
                     quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
                 }
-                if (quizListCollapseText) {
-                    quizListCollapseText.textContent = '收起题库列表';
-                }
+                if (quizListCollapseText) { quizListCollapseText.textContent = '收起'; }
             }
         }
 
@@ -1074,11 +1134,7 @@
                     var header = document.createElement('div');
                     header.className = 'stats-accordion-header';
                     header.onclick = function() { toggleAccordion(this); };
-                    header.innerHTML = '\
-                        <span class="material-icons accordion-icon">chevron_right</span>\
-                        <span class="accordion-title">' + quiz.name + '</span>\
-                        <span class="accordion-badge">最近 ' + history.length + ' 次</span>\
-                    ';
+                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + escapeJsStr(quiz.name) + '\',\'' + escapeJsStr(quiz.hash) + '\')" title="清空历史"><span class="material-icons" style="font-size:16px;">delete</span></button>';
 
                     // 折叠卡片内容区
                     var body = document.createElement('div');
@@ -1143,7 +1199,12 @@
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
             }
 
-            document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
+            var gsOld = document.getElementById('global-stats');
+            var gsDiv = document.createElement('div'); gsDiv.id = 'global-stats';
+            gsDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+            var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
+            for(var gi=0;gi<3;gi++){ var it=document.createElement('div'); it.style.cssText='flex:1;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);'; it.innerHTML='<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div>'; gsDiv.appendChild(it); }
+            gsOld.parentNode.replaceChild(gsDiv, gsOld);
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
@@ -1165,7 +1226,12 @@
                     } catch(e) {}
                 }
             });
-            document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
+            var gsR = document.getElementById('global-stats');
+            if (gsR && gsR.children.length === 3) {
+                gsR.children[0].childNodes[0].textContent = quizList.length;
+                gsR.children[1].childNodes[0].textContent = globalTotalQuestions;
+                gsR.children[2].childNodes[0].textContent = globalAnswered;
+            }
 
             // 更新上次得分（取第一条记录）
             var hasHistory = false;
@@ -1298,9 +1364,8 @@
 
             var delay = 500 + Math.floor(Math.random() * 300);
             autoAdvanceTimer = setTimeout(function() {
-                if (currentQuestionIndex < quizData.length - 1) {
-                    goToNextQuestion();
-                }
+                if (_wrongQueue && _wrongQueue.length > 0) { goToNextQuestion(); }
+                else if (!_wrongQueue && currentQuestionIndex < quizData.length - 1) { goToNextQuestion(); }
             }, delay);
         }
 
@@ -1311,6 +1376,9 @@
         function renderQuestion(index) {
             clearAutoAdvanceTimer();
             window.scrollTo(0, 0);
+
+            if (_wrongQueue && _wrongQueue.length > 0) { index = _wrongQueue[0]; }
+            else if (_wrongQueue && _wrongQueue.length === 0 && !isExamFinished) { handleSubmit(); return; }
 
             currentQuestionIndex = index;
             var questionData = quizData[index];
@@ -1467,10 +1535,27 @@
                 } finally {
                     _memorizeLockIndex = -1;
                 }
+
+                if (isWrongReinsert && _wrongQueue && _wrongQueue.length > 0) {
+                    var isRight = checkAnswer(questionData, userAnswers[qIndex]);
+                    if (isRight) {
+                        _wrongQueue.shift();
+                    } else {
+                        var cur = _wrongQueue.shift();
+                        var pos = _wrongQueue.length > 0 ? Math.floor(Math.random() * (_wrongQueue.length + 1)) : 0;
+                        _wrongQueue.splice(pos, 0, cur);
+                        if (quizData[cur]) {
+                            userAnswers[cur] = quizData[cur].type.indexOf('多选') !== -1 ? [] : null;
+                        }
+                        var lockedOpts = clickedDiv.parentNode.querySelectorAll('.memorize-disabled');
+                        for (var li = 0; li < lockedOpts.length; li++) lockedOpts[li].classList.remove('memorize-disabled');
+                    }
+                }
             }
 
             updateCardStatus(qIndex + 1, userAnswers[qIndex]);
             updateCardToggleText();
+            saveActiveProgress();
         }
 
         // =========================================================
@@ -1614,9 +1699,8 @@
 
         window.goToNextQuestion = function() {
             clearAutoAdvanceTimer();
-            if (currentQuestionIndex < quizData.length - 1) {
-                renderQuestion(currentQuestionIndex + 1);
-            }
+            if (_wrongQueue && _wrongQueue.length > 0) { renderQuestion(_wrongQueue[0]); }
+            else if (!_wrongQueue && currentQuestionIndex < quizData.length - 1) { renderQuestion(currentQuestionIndex + 1); }
         };
 
         window.toggleAnswerCard = function(forceState) {
@@ -1686,6 +1770,7 @@
             // V17.0: 题库列表折叠初始状态
             isQuizListCollapsed = false;
             quizListScrollWrapper.classList.remove('collapsed');
+            quizListCollapseText.textContent = '收起';
 
             // V20.1: localStorage 可用性检测
             try {
@@ -1902,6 +1987,7 @@
         };
 
         submitBtn.addEventListener('click', handleSubmit);
+        window.addEventListener('beforeunload', function(){ saveActiveProgress(); });
 
         // 全局异常捕获：出错时 toast 提示而非静默崩溃
         window.onerror = function(msg) {
