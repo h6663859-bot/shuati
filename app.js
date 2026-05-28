@@ -280,7 +280,6 @@
 
                 if (swipeHint && newState === 'Quiz') swipeHint.style.display = 'block';
 
-                currentQuestionIndex = 0;
                 initQuizUI();
             } else if (newState === 'Stats') {
                 statsPage.style.display = 'block';
@@ -353,11 +352,11 @@
             if (isQuizListCollapsed) {
                 quizListScrollWrapper.classList.add('collapsed');
                 quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
-                quizListCollapseText.textContent = '展开题库列表';
+                quizListCollapseText.textContent = '展开';
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
                 quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
-                quizListCollapseText.textContent = '收起题库列表';
+                quizListCollapseText.textContent = '收起';
             }
         };
 
@@ -633,6 +632,7 @@
                     quizData: quizData,
                     userAnswers: userAnswers,
                     seconds: seconds,
+                    currentQuestionIndex: currentQuestionIndex,
                     timestamp: new Date().toISOString()
                 });
                 localStorage.setItem(activeKey, dataToSave);
@@ -652,6 +652,7 @@
                     quizData = data.quizData || [];
                     userAnswers = data.userAnswers || [];
                     seconds = data.seconds || 0;
+                    currentQuestionIndex = data.currentQuestionIndex || 0;
                     isExamFinished = false;
                     return true;
                 }
