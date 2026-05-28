@@ -1259,9 +1259,39 @@
 
                     var card = document.createElement('div'); card.className = 'history-card';
                     if (ar.label) card.style.borderLeftColor = '#CFA84E';
-                    var sn = escapeJsStr(quiz.name), sh = escapeJsStr(ar.hash);
-                    var btns = ar.label ? '' : '<button class=\"delete-history-btn\" onclick=\"event.stopPropagation();deleteHistoryRecord(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ',this)\" title=\"删除\"><span class=\"material-icons\">delete</span></button>';
-                    card.innerHTML = btns + '<p style=\"margin:0;font-size:0.9em;padding-right:35px;\"><strong>' + ar.label + '得分: <span style=\"color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';\">' + score + '分</span></strong> | 对/错: ' + correct + '/' + wrong + ' | 用时: ' + tStr + '<br><span style=\"font-size:0.8em;color:#999;\">' + dStr + '</span></p><div style=\"display:flex;gap:10px;margin-top:10px;\"><button onclick=\"reviewHistoricalQuiz(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ')\" class=\"btn-secondary\" style=\"background-color:var(--color-primary);color:white;\">🔎 回顾错题</button><button onclick=\"startReviewWrongQuiz(\\'' + sn + '\\',\\'' + sh + '\\',' + ri + ')\" class=\"btn-secondary\" style=\"background-color:var(--color-wrong);color:white;\" ' + (wrong === 0 ? 'disabled' : '') + '>🔄 重做错题 (' + wrong + ')</button></div>';
+                    var sn = quiz.name, sh = ar.hash;
+
+                    var info = document.createElement('p');
+                    info.style.cssText = 'margin:0;font-size:0.9em;padding-right:35px;';
+                    info.innerHTML = '<strong>' + escapeHtml(ar.label) + '得分: <span style=\"color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';\">' + score + '分</span></strong> | 对/错: ' + correct + '/' + wrong + ' | 用时: ' + escapeHtml(tStr) + '<br><span style=\"font-size:0.8em;color:#999;\">' + escapeHtml(dStr) + '</span>';
+                    card.appendChild(info);
+
+                    if (!ar.label) {
+                        var delBtn = document.createElement('button');
+                        delBtn.className = 'delete-history-btn';
+                        delBtn.title = '删除此条记录';
+                        delBtn.innerHTML = '<span class=\"material-icons\">delete</span>';
+                        delBtn.onclick = (function(n,h,i){ return function(e){ e.stopPropagation(); deleteHistoryRecord(n,h,i,this); }; })(sn, sh, ri);
+                        card.appendChild(delBtn);
+                    }
+
+                    var btnRow = document.createElement('div');
+                    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:10px;';
+                    var revBtn = document.createElement('button');
+                    revBtn.className = 'btn-secondary';
+                    revBtn.style.cssText = 'background-color:var(--color-primary);color:white;';
+                    revBtn.textContent = '🔎 回顾错题';
+                    revBtn.onclick = (function(n,h,i){ return function(){ reviewHistoricalQuiz(n,h,i); }; })(sn, sh, ri);
+                    btnRow.appendChild(revBtn);
+                    var redoBtn = document.createElement('button');
+                    redoBtn.className = 'btn-secondary';
+                    redoBtn.style.cssText = 'background-color:var(--color-wrong);color:white;';
+                    redoBtn.textContent = '🔄 重做错题 (' + wrong + ')';
+                    if (wrong === 0) redoBtn.disabled = true;
+                    redoBtn.onclick = (function(n,h,i){ return function(){ startReviewWrongQuiz(n,h,i); }; })(sn, sh, ri);
+                    btnRow.appendChild(redoBtn);
+                    card.appendChild(btnRow);
+
                     body.appendChild(card);
                 });
 
