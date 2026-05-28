@@ -251,13 +251,7 @@
             });
 
             var isMobile = window.innerWidth <= 768;
-            if (!isMobile) {
-                answerCardArea.style.position = 'sticky';
-                answerCardArea.classList.add('visible');
-                isCardVisible = true;
-            } else {
-                answerCardArea.style.position = 'fixed';
-            }
+            answerCardArea.style.position = isMobile ? 'fixed' : 'sticky';
 
             var swipeHint = document.getElementById('swipe-hint');
             if (swipeHint) swipeHint.style.display = 'none';
@@ -286,6 +280,7 @@
 
                 if (swipeHint && newState === 'Quiz') swipeHint.style.display = 'block';
 
+                currentQuestionIndex = 0;
                 initQuizUI();
             } else if (newState === 'Stats') {
                 statsPage.style.display = 'block';
@@ -374,9 +369,8 @@
             var body = accordion.querySelector('.stats-accordion-body');
             var isOpen = accordion.classList.contains('open');
             if (isOpen) {
-                body.style.maxHeight = body.scrollHeight + 'px';
-                body.offsetHeight;
-                body.style.maxHeight = '0px';
+                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
+                requestAnimationFrame(function(){ body.style.maxHeight = '0px'; });
                 body.addEventListener('transitionend', function h() {
                     body.removeEventListener('transitionend', h);
                     accordion.classList.remove('open');
@@ -384,7 +378,7 @@
                 });
             } else {
                 accordion.classList.add('open');
-                body.style.maxHeight = body.scrollHeight + 'px';
+                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
                 body.addEventListener('transitionend', function h() {
                     body.removeEventListener('transitionend', h);
                     body.style.maxHeight = '';
@@ -1215,7 +1209,7 @@
                     progressText = '已答 ' + bestAns + '/' + bestTotal + labelHint;
                     startBtnText = '继续答题';
                     if (bestLabel) {
-                        startOnclick = '_continueSplitQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\',\'' + bestLabel + '\')';
+                        startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
                     }
                 }
 

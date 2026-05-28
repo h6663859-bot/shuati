@@ -969,23 +969,13 @@
         .palette-dot.active { border-color: var(--color-text-main); }
 
         .stats-accordion-body {
-
             max-height: 0;
-
             overflow: hidden;
-
             padding: 0 16px;
-
-            transition: max-height 0.4s ease;
-
+            transition: max-height 0.3s ease;
         }
-
         .stats-accordion.open .stats-accordion-body {
-
-            max-height: 3000px;
-
             overflow-y: auto;
-
             -webkit-overflow-scrolling: touch;
 
             padding: 12px 16px;
