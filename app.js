@@ -1233,7 +1233,23 @@
                     } catch(e) {}
                 }
 
-                if (history && history.length > 0) {
+                // 先扫描拆分历史
+                var splitPrefix = 'HISTORY_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                var splitKeys = [], splitRecords = [];
+                for (var sk = 0; sk < localStorage.length; sk++) {
+                    var lk = localStorage.key(sk);
+                    if (lk && lk.indexOf(splitPrefix) === 0) splitKeys.push(lk);
+                }
+                for (var si = 0; si < splitKeys.length; si++) {
+                    try {
+                        var spHist = JSON.parse(localStorage.getItem(splitKeys[si]));
+                        if (spHist && spHist.length) {
+                            splitRecords.push({ key: splitKeys[si].replace(splitPrefix, ''), data: spHist });
+                        }
+                    } catch(e) {}
+                }
+
+                if ((history && history.length > 0) || splitRecords.length > 0) {
                     hasAnyHistory = true;
 
                     // 创建折叠卡片容器
@@ -1244,10 +1260,11 @@
                     var header = document.createElement('div');
                     header.className = 'stats-accordion-header';
                     header.onclick = function() { toggleAccordion(this); };
+                    var totalRecords = (history ? history.length : 0) + splitRecords.length;
                     header.innerHTML = '\
                         <span class="material-icons accordion-icon">chevron_right</span>\
                         <span class="accordion-title">' + quiz.name + '</span>\
-                        <span class="accordion-badge">最近 ' + history.length + ' 次</span>\
+                        <span class="accordion-badge">最近 ' + totalRecords + ' 次</span>\
                     ';
 
                     // 折叠卡片内容区
@@ -1255,7 +1272,7 @@
                     body.className = 'stats-accordion-body';
 
                     // 渲染该题库的最近5次历史记录
-                    history.forEach(function(record, hIdx) {
+                    if (history) history.forEach(function(record, hIdx) {
                         var total = record.quizData.length;
                         var correctCount = 0;
 
@@ -1303,20 +1320,10 @@
                         body.appendChild(historyCard);
                     });
 
-                    // 拆分历史扫描
-                    var splitPrefix = 'HISTORY_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
-                    var splitKeys = [];
-                    for (var sk = 0; sk < localStorage.length; sk++) {
-                        var lk = localStorage.key(sk);
-                        if (lk && lk.indexOf(splitPrefix) === 0) splitKeys.push(lk);
-                    }
-                    for (var si = 0; si < splitKeys.length; si++) {
-                        try {
-                            var spHist = JSON.parse(localStorage.getItem(splitKeys[si]));
-                            if (!spHist || !spHist.length) continue;
-                            hasAnyHistory = true;
-                            var rangeLabel = splitKeys[si].replace(splitPrefix, '');
-                            spHist.forEach(function(record, hIdx) {
+                    // 拆分历史渲染
+                    for (var si = 0; si < splitRecords.length; si++) {
+                        var rangeLabel = splitRecords[si].key;
+                        splitRecords[si].data.forEach(function(record, hIdx) {
                                 var total = record.quizData.length;
                                 var correctCount = 0;
                                 record.quizData.forEach(function(q, qIdx) { if (checkAnswer(q, record.userAnswers[qIdx])) correctCount++; });
@@ -1344,7 +1351,6 @@
                                 ';
                                 body.appendChild(card);
                             });
-                        } catch(e){}
                     }
 
                     accordion.appendChild(header);
