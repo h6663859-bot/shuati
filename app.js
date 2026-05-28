@@ -1200,6 +1200,7 @@
 
         // V20.0: 统计页面 — 按题库归类折叠（Accordion）
         function renderStatsPage() {
+            try {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
             lastScoreDisplay.textContent = '--';
@@ -1364,6 +1365,7 @@
             }
 
             document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
+            } catch(e) { showToast('统计加载异常，请刷新重试', 'error'); }
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
