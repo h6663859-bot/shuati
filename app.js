@@ -1245,7 +1245,7 @@
                     }
                 }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button class="cta-btn" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;background:#9CA3AF;color:#fff;margin-top:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button class="cta-btn cta-primary" style="padding:10px 15px;font-size:0.9em;flex-grow:0;margin-top:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div');
                 quizCard.className = 'quiz-card-item';
@@ -1274,7 +1274,7 @@
                     quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
                 }
                 if (quizListCollapseText) {
-                    quizListCollapseText.textContent = '展开题库列表';
+                    quizListCollapseText.textContent = '展开';
                 }
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
@@ -1282,7 +1282,7 @@
                     quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
                 }
                 if (quizListCollapseText) {
-                    quizListCollapseText.textContent = '收起题库列表';
+                    quizListCollapseText.textContent = '收起';
                 }
             }
         }
@@ -1387,7 +1387,19 @@
             });
 
             if (!hasAnyHistory) historyListContent.innerHTML = '<p style=\"color: var(--color-text-secondary);\">暂无历史记录。请先完成一次答题。</p>';
-            document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
+            var gs = document.getElementById('global-stats').parentNode;
+            var gsOld = document.getElementById('global-stats');
+            var gsDiv = document.createElement('div');
+            gsDiv.id = 'global-stats';
+            gsDiv.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;';
+            var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
+            for(var gi=0;gi<items.length;gi++){
+                var it = document.createElement('div');
+                it.style.cssText = 'flex:1;min-width:80px;background:var(--color-card-bg);border-radius:10px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);';
+                it.innerHTML = '<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">' + items[gi].v + '</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">' + items[gi].l + '</div>';
+                gsDiv.appendChild(it);
+            }
+            gsOld.parentNode.replaceChild(gsDiv, gsOld);
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
