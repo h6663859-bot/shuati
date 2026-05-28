@@ -1245,7 +1245,7 @@
                     }
                 }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:6px 10px;font-size:0.78em;font-weight:bold;border:none;border-radius:6px;background:var(--color-primary);color:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div');
                 quizCard.className = 'quiz-card-item';
@@ -1421,7 +1421,12 @@
                     } catch(e) {}
                 }
             });
-            document.getElementById('global-stats').textContent = '总题库: ' + quizList.length + ' 个 | 总题数: ' + globalTotalQuestions + ' 题 | 已答题: ' + globalAnswered + ' 题';
+            var gsR = document.getElementById('global-stats');
+            if (gsR && gsR.children.length === 3) {
+                gsR.children[0].childNodes[0].textContent = quizList.length;
+                gsR.children[1].childNodes[0].textContent = globalTotalQuestions;
+                gsR.children[2].childNodes[0].textContent = globalAnswered;
+            }
 
             // 更新上次得分（取第一条记录）
             var hasHistory = false;
