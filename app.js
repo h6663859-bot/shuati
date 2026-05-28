@@ -1518,17 +1518,24 @@
                 }
 
                 // 错题回插：答错时随机插回队列
-                if (isWrongReinsert && _wrongQueue) {
-                    var isRight = checkAnswer(questionData, userAnswers[qIndex]);
-                    if (isRight) {
-                        _wrongQueue.shift();
-                    } else {
-                        var cur = _wrongQueue.shift();
-                        var pos = _wrongQueue.length > 0 ? Math.floor(Math.random() * (_wrongQueue.length + 1)) : 0;
-                        _wrongQueue.splice(pos, 0, cur);
-                        var qd = quizData[cur];
-                        userAnswers[cur] = qd.type.indexOf('多选') !== -1 ? [] : null;
-                    }
+                if (isWrongReinsert && _wrongQueue && _wrongQueue.length > 0) {
+                    try {
+                        var isRight = checkAnswer(questionData, userAnswers[qIndex]);
+                        if (isRight) {
+                            _wrongQueue.shift();
+                        } else {
+                            var cur = _wrongQueue.shift();
+                            var pos = _wrongQueue.length > 0 ? Math.floor(Math.random() * (_wrongQueue.length + 1)) : 0;
+                            _wrongQueue.splice(pos, 0, cur);
+                            // 清除该题答案以便再次作答
+                            if (quizData[cur]) {
+                                userAnswers[cur] = quizData[cur].type.indexOf('多选') !== -1 ? [] : null;
+                            }
+                            // 确保 DOM 中的锁定状态被清除
+                            var lockedOpts = clickedDiv.parentNode.querySelectorAll('.memorize-disabled');
+                            for (var li = 0; li < lockedOpts.length; li++) lockedOpts[li].classList.remove('memorize-disabled');
+                        }
+                    } catch (err) { console.error('错题回插出错:', err); }
                 }
             }
 
