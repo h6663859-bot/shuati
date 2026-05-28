@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>刷题 (V22.0)</title>
+    <title>刷题 (V23.0)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- Material Icons: Google Fonts (国际线路) -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -34,8 +34,22 @@
 </head>
 <body>
     <header id="top-header">
-         <h1>刷题 (V22.0)</h1>
+         <h1>刷题 (V23.0)</h1>
     </header>
+
+    <!-- 调色板按钮 -->
+    <button id="palette-btn" onclick="togglePalettePopup()" title="切换主题色调" style="position:fixed;top:12px;right:66px;z-index:1500;width:40px;height:40px;border-radius:50%;border:2px solid var(--color-border-light);background:var(--color-card-bg);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:all 0.25s;">
+        <span class="material-icons" style="font-size:22px;">palette</span>
+    </button>
+    <div id="palette-popup" style="display:none;position:fixed;top:58px;right:16px;z-index:1600;background:var(--color-card-bg);border-radius:12px;padding:10px 14px;box-shadow:0 4px 20px rgba(0,0,0,0.15);border:1px solid var(--color-border-light);">
+        <div class="palette-row">
+            <div class="palette-dot active" onclick="setTheme(0)" style="background:linear-gradient(135deg,#003153,#6E8B74);" title="普鲁士蓝"></div>
+            <div class="palette-dot" onclick="setTheme(1)" style="background:linear-gradient(135deg,#C75B39,#7A9A7E);" title="暖橙"></div>
+            <div class="palette-dot" onclick="setTheme(2)" style="background:linear-gradient(135deg,#2E5A3E,#6B8C7C);" title="森林绿茶"></div>
+            <div class="palette-dot" onclick="setTheme(3)" style="background:linear-gradient(135deg,#4A3A6E,#8B7E9E);" title="薰衣草紫"></div>
+            <div class="palette-dot" onclick="setTheme(4)" style="background:linear-gradient(135deg,#3A4048,#6E8B74);" title="石墨灰"></div>
+        </div>
+    </div>
 
     <!-- V17.0：右上角设置齿轮 -->
     <button id="settings-gear-btn" onclick="toggleSettingsDrawer()" title="设置">
@@ -124,17 +138,6 @@
                     </div>
                 </div>
 
-                <!-- 主题色调 -->
-                <div class="shuffle-section" style="margin-top:18px;">
-                    <div class="section-title"><span class="material-icons">palette</span> 主题色调</div>
-                    <div class="palette-row">
-                        <div class="palette-dot active" onclick="setTheme(0)" style="background:linear-gradient(135deg,#003153,#6E8B74);" title="普鲁士蓝"></div>
-                        <div class="palette-dot" onclick="setTheme(1)" style="background:linear-gradient(135deg,#C75B39,#7A9A7E);" title="暖橙"></div>
-                        <div class="palette-dot" onclick="setTheme(2)" style="background:linear-gradient(135deg,#2E5A3E,#6B8C7C);" title="森林绿"></div>
-                        <div class="palette-dot" onclick="setTheme(3)" style="background:linear-gradient(135deg,#4A3A6E,#8B7E9E);" title="薰衣草紫"></div>
-                        <div class="palette-dot" onclick="setTheme(4)" style="background:linear-gradient(135deg,#3A4048,#6E8B74);" title="石墨灰"></div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -170,7 +173,7 @@
                         <span class="material-icons" style="margin-right: 5px;">delete_forever</span> 清空本地数据
                     </button>
                 </div>
-                <div style="text-align: center; margin-top: 15px; font-size: 0.8em; color: #999; letter-spacing: 1px;">V22.0 © L.Y.M</div>
+                <div style="text-align: center; margin-top: 15px; font-size: 0.8em; color: #999; letter-spacing: 1px;">V23.0 © L.Y.M</div>
             </section>
 
             <section id="quiz-area" style="display: none;">

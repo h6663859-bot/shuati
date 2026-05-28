@@ -455,9 +455,14 @@
             r.style.setProperty('--color-primary', t.primary);
             r.style.setProperty('--color-accent-a', t.a);
             r.style.setProperty('--color-accent-b', t.b);
-            var dots = document.querySelectorAll('.palette-dot');
+            var dots = document.querySelectorAll('#palette-popup .palette-dot');
             for (var di = 0; di < dots.length; di++) dots[di].classList.toggle('active', di === idx);
             try { localStorage.setItem('THEME_IDX', idx); } catch(e) {}
+            document.getElementById('palette-popup').style.display = 'none';
+        };
+        window.togglePalettePopup = function() {
+            var p = document.getElementById('palette-popup');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
         };
         (function(){
             try { var ti = parseInt(localStorage.getItem('THEME_IDX')); if (ti >= 0 && ti < _themes.length) setTheme(ti); } catch(e) {}
@@ -523,6 +528,36 @@
             document.getElementById('split-end').value = '';
             document.getElementById('split-modal-overlay').style.display = 'flex';
         };
+        // 从首页"继续答题"直接恢复拆分进度
+        window._continueSplitQuiz = function(quizName, quizHash, rangeLabel) {
+            var quizList = getQuizList();
+            var targetQuiz = quizList.find(function(q) { return q.name === quizName && q.hash === quizHash; });
+            if (!targetQuiz) { alert("找不到该题库"); return; }
+            var parts = rangeLabel.split('-');
+            var startIdx = parseInt(parts[0]) || 1;
+            var endIdx = parseInt(parts[1]) || 0;
+            _splitQuizName = quizName; _splitQuizHash = quizHash; _splitQuizCount = targetQuiz.questionCount;
+
+            var rawText = localStorage.getItem(targetQuiz.dataKey);
+            var cb = function(text) {
+                var fullData = parseQuizText(text);
+                var sliced = fullData.slice(startIdx - 1, endIdx);
+                currentQuizName = quizName;
+                currentQuizHash = quizHash + '_SPLIT_' + rangeLabel;
+                currentQuestionIndex = 0;
+                var progKey = 'PROGRESS_' + currentQuizName + '_' + currentQuizHash;
+                var sp = localStorage.getItem(progKey);
+                if (sp) { try { var dp = JSON.parse(sp); quizData = dp.quizData; userAnswers = dp.userAnswers; seconds = dp.seconds || 0; } catch(e){} }
+                else { quizData = sliced; userAnswers = new Array(quizData.length).fill(null).map(function(_,i){ return quizData[i].type.indexOf('多选')!==-1?[]:null; }); seconds = 0; }
+                isExamFinished = false; _wrongQueue = null;
+                if (isMemorizeMode && isWrongReinsert) { _wrongQueue = []; for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi); }
+                if (isDrawerOpen) toggleSettingsDrawer();
+                setAppState('Quiz');
+            };
+            if (!rawText) { showLoading('正在加载题库...'); _idb.get(targetQuiz.dataKey).then(function(d){ hideLoading(); if(d) cb(d); else alert("加载失败"); }).catch(function(){ hideLoading(); alert("加载失败"); }); }
+            else cb(rawText);
+        };
+
         window.closeSplitModal = function() {
             document.getElementById('split-modal-overlay').style.display = 'none';
         };
@@ -1142,52 +1177,52 @@
             quizListCollapseBar.style.display = 'block';
 
             quizList.forEach(function(quiz) {
-                var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
-                var savedData = localStorage.getItem(activeKey);
-                var progressText = '未开始';
-                var startBtnText = '开始答题';
-                var answeredCount = 0;
-
-                if (savedData) {
-                    var data = JSON.parse(savedData);
-                    if (data.userAnswers && Array.isArray(data.userAnswers)) {
-                        answeredCount = data.userAnswers.filter(function(a) {
-                            return hasAnswered(a);
-                        }).length;
-                    }
-                    var remaining = quiz.questionCount - answeredCount;
-                    progressText = '已答 ' + answeredCount + ' 题 (剩余 ' + remaining + ' 题)';
-                    startBtnText = '继续答题';
-                }
-
                 var safeName = escapeHtml(quiz.name);
                 var safeNameJs = escapeJsStr(quiz.name);
                 var safeHashJs = escapeJsStr(quiz.hash);
-                var quizCard = document.createElement('div');
-                quizCard.className = 'quiz-card-item';
 
-                // 拆分进度扫描
-                var splitLines = '';
-                if (quiz.questionCount > 50) {
-                    var prefix = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
-                    var splitKeys = [];
-                    for (var sk = 0; sk < localStorage.length; sk++) {
-                        var lk = localStorage.key(sk);
-                        if (lk && lk.indexOf(prefix) === 0) splitKeys.push(lk);
+                // 统一进度扫描：找最新的一条进度
+                var bestKey = null, bestTime = '', bestLabel = '', bestAns = 0, bestTotal = 0;
+                var normalKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
+                try {
+                    var nd = JSON.parse(localStorage.getItem(normalKey));
+                    if (nd && nd.timestamp && nd.timestamp > bestTime) {
+                        bestTime = nd.timestamp; bestKey = normalKey; bestLabel = '';
+                        bestTotal = nd.userAnswers ? nd.userAnswers.length : quiz.questionCount;
+                        bestAns = nd.userAnswers ? nd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0;
                     }
-                    var totalSplitAns = 0, totalSplitQ = 0;
-                    for (var si = 0; si < splitKeys.length; si++) {
+                } catch(e) {}
+                var prefix = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                for (var sk = 0; sk < localStorage.length; sk++) {
+                    var lk = localStorage.key(sk);
+                    if (lk && lk.indexOf(prefix) === 0) {
                         try {
-                            var spData = JSON.parse(localStorage.getItem(splitKeys[si]));
-                            if (spData && spData.userAnswers) { totalSplitQ += spData.userAnswers.length; totalSplitAns += spData.userAnswers.filter(function(a){return hasAnswered(a);}).length; }
-                        } catch(e){}
+                            var sd = JSON.parse(localStorage.getItem(lk));
+                            if (sd && sd.timestamp && sd.timestamp > bestTime) {
+                                bestTime = sd.timestamp; bestKey = lk;
+                                bestLabel = lk.replace('PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_', '');
+                                bestTotal = sd.userAnswers ? sd.userAnswers.length : 0;
+                                bestAns = sd.userAnswers ? sd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0;
+                            }
+                        } catch(e) {}
                     }
-                    if (totalSplitQ > 0) splitLines = '<p style="font-size:0.78em;color:var(--color-accent-a);margin:2px 0;">拆分进度：已答 ' + totalSplitAns + '/' + totalSplitQ + '</p>';
                 }
 
-                var hasSplitProgress = splitKeys.length > 0;
-                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分' + (hasSplitProgress ? ' (有进度)' : '') + '</button>' : '';
+                var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
+                if (bestKey) {
+                    var remaining = bestTotal - bestAns;
+                    var labelHint = bestLabel ? ' (拆分' + bestLabel + ')' : '';
+                    progressText = '已答 ' + bestAns + '/' + bestTotal + labelHint;
+                    startBtnText = '继续答题';
+                    if (bestLabel) {
+                        startOnclick = '_continueSplitQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\',\'' + bestLabel + '\')';
+                    }
+                }
 
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分</button>' : '';
+
+                var quizCard = document.createElement('div');
+                quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
                     <h4>\
                         <span style="font-weight: 700;">' + safeName + '</span>\
@@ -1197,9 +1232,8 @@
                     </h4>\
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style: italic;">' + progressText + '</p>\
-                    ' + splitLines + '\
                     <div class="quiz-actions" style="display:flex;gap:8px;">\
-                        <button class="cta-btn cta-primary" style="padding: 10px 15px; font-size: 0.9em; flex-grow: 1;" onclick="startQuiz(\'' + safeNameJs + '\')">\
+                        <button class="cta-btn cta-primary" style="padding: 10px 15px; font-size: 0.9em; flex-grow: 1;" onclick="' + startOnclick + '">\
                             <span class="material-icons" style="font-size: 18px; margin-right: 5px;">play_arrow</span> ' + startBtnText + '\
                         </button>\
                         ' + splitBtn + '\
@@ -1687,6 +1721,7 @@
 
             updateCardStatus(qIndex + 1, userAnswers[qIndex]);
             updateCardToggleText();
+            saveActiveProgress();
         }
 
         // =========================================================
@@ -2101,6 +2136,7 @@
         };
 
         submitBtn.addEventListener('click', handleSubmit);
+        window.addEventListener('beforeunload', function(){ saveActiveProgress(); });
 
         // 全局异常捕获：出错时 toast 提示而非静默崩溃
         window.onerror = function(msg) {
