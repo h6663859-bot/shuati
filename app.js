@@ -449,6 +449,42 @@
             saveSettings();
         };
 
+        // 主题色调
+        var _themes = [
+            { primary:'#003153', a:'#6E8B74', b:'#FFC107' },
+            { primary:'#C75B39', a:'#7A9A7E', b:'#E8A840' },
+            { primary:'#2E5A3E', a:'#6B8C7C', b:'#D4A840' },
+            { primary:'#4A3A6E', a:'#8B7E9E', b:'#E0B860' },
+            { primary:'#3A4048', a:'#6E8B74', b:'#C8A040' }
+        ];
+        window.setTheme = function(idx) {
+            var t = _themes[idx];
+            var r = document.querySelector(':root');
+            r.style.setProperty('--color-primary', t.primary);
+            r.style.setProperty('--color-accent-a', t.a);
+            r.style.setProperty('--color-accent-b', t.b);
+            var dots = document.querySelectorAll('.palette-dot');
+            for (var di = 0; di < dots.length; di++) dots[di].classList.toggle('active', di === idx);
+            try { localStorage.setItem('THEME_IDX', idx); } catch(e) {}
+        };
+        (function(){
+            try { var ti = parseInt(localStorage.getItem('THEME_IDX')); if (ti >= 0 && ti < _themes.length) setTheme(ti); } catch(e) {}
+        })();
+
+        // 统计清空
+        window.clearQuizStats = function(quizName, quizHash) {
+            if (!confirm('确定删除题库「' + quizName + '」的全部历史记录吗？此操作不可逆！')) return;
+            var prefix1 = 'HISTORY_' + quizName + '_' + quizHash;
+            var prefix2 = prefix1 + '_SPLIT_';
+            var keys = [];
+            for (var k = 0; k < localStorage.length; k++) {
+                var lk = localStorage.key(k);
+                if (lk && (lk.indexOf(prefix2) === 0 || lk === prefix1)) keys.push(lk);
+            }
+            for (var ki = 0; ki < keys.length; ki++) localStorage.removeItem(keys[ki]);
+            renderStatsPage();
+        };
+
         window.toggleWrongReinsert = function() {
             isWrongReinsert = !isWrongReinsert;
             var toggleEl = document.getElementById('wrong-reinsert-toggle');
@@ -510,16 +546,11 @@
             var loadFromIdb = false;
             if (!rawText) { loadFromIdb = true; }
 
-            var startIdx, endIdx;
-            if (type === 'half1') { startIdx = 1; endIdx = Math.floor(_splitQuizCount / 2); }
-            else if (type === 'half2') { startIdx = Math.floor(_splitQuizCount / 2) + 1; endIdx = _splitQuizCount; }
-            else if (type === 'custom') {
-                startIdx = parseInt(document.getElementById('split-start').value) || 1;
-                endIdx = parseInt(document.getElementById('split-end').value) || _splitQuizCount;
-                if (startIdx < 1) startIdx = 1;
-                if (endIdx > _splitQuizCount) endIdx = _splitQuizCount;
-                if (startIdx > endIdx) { alert("起始题号不能大于结束题号"); return; }
-            } else { return; }
+            var startIdx = parseInt(document.getElementById('split-start').value) || 1;
+            var endIdx = parseInt(document.getElementById('split-end').value) || _splitQuizCount;
+            if (startIdx < 1) startIdx = 1;
+            if (endIdx > _splitQuizCount) endIdx = _splitQuizCount;
+            if (startIdx > endIdx) { alert("起始题号不能大于结束题号"); return; }
 
             closeSplitModal();
 
@@ -1248,7 +1279,7 @@
                 var accordion = document.createElement('div'); accordion.className = 'stats-accordion';
                 var header = document.createElement('div'); header.className = 'stats-accordion-header';
                 header.onclick = function() { toggleAccordion(this); };
-                header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + allRecords.length + ' 次</span>';
+                header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + allRecords.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + escapeJsStr(quiz.name) + '\',\'' + escapeJsStr(quiz.hash) + '\')" title="清空历史">🗑</button>';
                 var body = document.createElement('div'); body.className = 'stats-accordion-body';
 
                 allRecords.forEach(function(ar, ri) {
