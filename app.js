@@ -551,6 +551,36 @@
             else cb(rawText);
         };
 
+        // 首页"继续答题"拆分入口：用完整 hash_SPLIT_range 加载进度
+        window._startSplitQuizDirect = function(quizName, fullHash) {
+            var quizList = getQuizList();
+            var targetQuiz = quizList.find(function(q) { return q.name === quizName && fullHash.indexOf(q.hash) === 0; });
+            if (!targetQuiz) { alert("找不到该题库"); return; }
+            var rawText = localStorage.getItem(targetQuiz.dataKey);
+            var cb = function(text) {
+                currentQuizName = quizName;
+                currentQuizHash = fullHash;
+                currentQuestionIndex = 0;
+                if (!loadActiveProgress(quizName, fullHash)) {
+                    var fullData = parseQuizText(text);
+                    quizData = fullData;
+                    if (isShuffleQuestions) quizData = shuffleArray(quizData);
+                    if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
+                    else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
+                    userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
+                        return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
+                    });
+                    seconds = 0;
+                }
+                isExamFinished = false; _wrongQueue = null;
+                if (isMemorizeMode && isWrongReinsert) { _wrongQueue = []; for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi); }
+                if (isDrawerOpen) toggleSettingsDrawer();
+                setAppState('Quiz');
+            };
+            if (!rawText) { showLoading('正在加载题库...'); _idb.get(targetQuiz.dataKey).then(function(d) { hideLoading(); if (d) cb(d); else alert("加载失败"); }).catch(function() { hideLoading(); alert("加载失败"); }); }
+            else cb(rawText);
+        };
+
         window.closeSplitModal = function() {
             document.getElementById('split-modal-overlay').style.display = 'none';
         };
@@ -1210,11 +1240,12 @@
                     progressText = '已答 ' + bestAns + '/' + bestTotal + labelHint;
                     startBtnText = '继续答题';
                     if (bestLabel) {
-                        startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
+                        var splitHashJs = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel);
+                        startOnclick = '_startSplitQuizDirect(\'' + safeNameJs + '\',\'' + splitHashJs + '\')';
                     }
                 }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button class="cta-btn" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;background:#9CA3AF;color:#fff;margin-top:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div');
                 quizCard.className = 'quiz-card-item';
@@ -1930,6 +1961,7 @@
             // V17.0: 题库列表折叠初始状态
             isQuizListCollapsed = false;
             quizListScrollWrapper.classList.remove('collapsed');
+            quizListCollapseText.textContent = '收起';
 
             // V20.1: localStorage 可用性检测
             try {
