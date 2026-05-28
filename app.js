@@ -62,33 +62,7 @@
         const quizListCollapseText = document.getElementById('quiz-list-collapse-text');
 
         // =========================================================
-        // A. V20.5: 暗色模式切换
-        // =========================================================
-        var isDarkMode = false;
-        window.toggleDarkMode = function() {
-            isDarkMode = !isDarkMode;
-            var html = document.documentElement;
-            var icon = document.querySelector('#dark-mode-btn .material-icons');
-            if (isDarkMode) {
-                html.setAttribute('data-theme', 'dark');
-                if (icon) icon.textContent = 'light_mode';
-            } else {
-                html.removeAttribute('data-theme');
-                if (icon) icon.textContent = 'dark_mode';
-            }
-            try { localStorage.setItem('DARK_MODE', isDarkMode ? '1' : '0'); } catch(e) {}
-        };
-        (function() {
-            try { isDarkMode = localStorage.getItem('DARK_MODE') === '1'; } catch(e) {}
-            if (isDarkMode) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                var icon = document.querySelector('#dark-mode-btn .material-icons');
-                if (icon) icon.textContent = 'light_mode';
-            }
-        })();
-
-        // =========================================================
-        // B. V20.0: 设置持久化（LocalStorage 读写）
+        // A. V20.0: 设置持久化（LocalStorage 读写）
         // =========================================================
 
         function saveSettings() {
@@ -397,7 +371,25 @@
         // =========================================================
         window.toggleAccordion = function(header) {
             var accordion = header.parentElement;
-            accordion.classList.toggle('open');
+            var body = accordion.querySelector('.stats-accordion-body');
+            var isOpen = accordion.classList.contains('open');
+            if (isOpen) {
+                body.style.maxHeight = body.scrollHeight + 'px';
+                body.offsetHeight;
+                body.style.maxHeight = '0px';
+                body.addEventListener('transitionend', function h() {
+                    body.removeEventListener('transitionend', h);
+                    accordion.classList.remove('open');
+                    body.style.maxHeight = '';
+                });
+            } else {
+                accordion.classList.add('open');
+                body.style.maxHeight = body.scrollHeight + 'px';
+                body.addEventListener('transitionend', function h() {
+                    body.removeEventListener('transitionend', h);
+                    body.style.maxHeight = '';
+                });
+            }
         };
 
         // =========================================================
@@ -564,23 +556,29 @@
                 currentQuizHash = _splitQuizHash + '_SPLIT_' + startIdx + '-' + endIdx;
                 currentQuestionIndex = 0;
                 quizData = sliced;
-                if (isShuffleQuestions) quizData = shuffleArray(quizData);
-                if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
-                else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
-                userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
-                    return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
-                });
-                seconds = 0; isExamFinished = false;
+
+                // 恢复拆分进度，有进度则跳过乱序
+                var progKey = 'PROGRESS_' + currentQuizName + '_' + currentQuizHash;
+                var sp = localStorage.getItem(progKey);
+                var hasProg = false;
+                if (sp) { try { var dp = JSON.parse(sp); quizData = dp.quizData; userAnswers = dp.userAnswers; seconds = dp.seconds || 0; hasProg = true; } catch(e){} }
+
+                if (!hasProg) {
+                    if (isShuffleQuestions) quizData = shuffleArray(quizData);
+                    if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
+                    else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
+                    userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
+                        return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
+                    });
+                    seconds = 0;
+                }
+                currentQuestionIndex = 0;
+                isExamFinished = false;
                 _wrongQueue = null;
                 if (isMemorizeMode && isWrongReinsert) {
                     _wrongQueue = [];
                     for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi);
                 }
-
-                // 恢复拆分进度
-                var progKey = 'PROGRESS_' + currentQuizName + '_' + currentQuizHash;
-                var sp = localStorage.getItem(progKey);
-                if (sp) { try { var dp = JSON.parse(sp); quizData = dp.quizData; userAnswers = dp.userAnswers; seconds = dp.seconds || 0; } catch(e){} }
 
                 if (isDrawerOpen) toggleSettingsDrawer();
                 setAppState('Quiz');
@@ -1177,15 +1175,14 @@
                         var lk = localStorage.key(sk);
                         if (lk && lk.indexOf(prefix) === 0) splitKeys.push(lk);
                     }
+                    var totalSplitAns = 0, totalSplitQ = 0;
                     for (var si = 0; si < splitKeys.length; si++) {
                         try {
                             var spData = JSON.parse(localStorage.getItem(splitKeys[si]));
-                            var rangePart = splitKeys[si].replace(prefix, '');
-                            var spAns = 0, spTotal = 0;
-                            if (spData && spData.userAnswers) { spTotal = spData.userAnswers.length; spAns = spData.userAnswers.filter(function(a){return hasAnswered(a);}).length; }
-                            splitLines += '<p style="font-size:0.78em;color:var(--color-accent-a);margin:2px 0;">📋 ' + rangePart + '：已答 ' + spAns + '/' + spTotal + '</p>';
+                            if (spData && spData.userAnswers) { totalSplitQ += spData.userAnswers.length; totalSplitAns += spData.userAnswers.filter(function(a){return hasAnswered(a);}).length; }
                         } catch(e){}
                     }
+                    if (totalSplitQ > 0) splitLines = '<p style="font-size:0.78em;color:var(--color-accent-a);margin:2px 0;">拆分进度：已答 ' + totalSplitAns + '/' + totalSplitQ + '</p>';
                 }
 
                 var hasSplitProgress = splitKeys.length > 0;
@@ -1279,7 +1276,7 @@
                 var accordion = document.createElement('div'); accordion.className = 'stats-accordion';
                 var header = document.createElement('div'); header.className = 'stats-accordion-header';
                 header.onclick = function() { toggleAccordion(this); };
-                header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + allRecords.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + escapeJsStr(quiz.name) + '\',\'' + escapeJsStr(quiz.hash) + '\')" title="清空历史">🗑</button>';
+                header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + allRecords.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + escapeJsStr(quiz.name) + '\',\'' + escapeJsStr(quiz.hash) + '\')" title="清空历史"><span class="material-icons" style="font-size:16px;">delete</span></button>';
                 var body = document.createElement('div'); body.className = 'stats-accordion-body';
 
                 allRecords.forEach(function(ar, ri) {
@@ -1718,7 +1715,6 @@
             });
 
             container.addEventListener('mousedown', function(e) {
-                if (e.target.closest('button') || e.target.closest('.option-item')) return;
                 swipeStartX = e.clientX;
                 swipeStartY = e.clientY;
                 swipeActive = true;
