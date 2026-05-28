@@ -1058,7 +1058,7 @@
                 var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
                 if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\')'; } }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
@@ -1093,7 +1093,6 @@
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
             lastScoreDisplay.textContent = '--';
-            document.getElementById('global-stats').textContent = '--';
 
             if (quizList.length === 0) {
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">请先导入题库以查看统计和历史记录。</p>';
@@ -1200,11 +1199,12 @@
             }
 
             var gsOld = document.getElementById('global-stats');
-            var gsDiv = document.createElement('div'); gsDiv.id = 'global-stats';
+            var wrap = gsOld.parentNode;
+            var gsDiv = document.createElement('div'); gsDiv.id = 'global-stats-wrap';
             gsDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
             var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
-            for(var gi=0;gi<3;gi++){ var it=document.createElement('div'); it.style.cssText='flex:1;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);'; it.innerHTML='<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div>'; gsDiv.appendChild(it); }
-            gsOld.parentNode.replaceChild(gsDiv, gsOld);
+            for(var gi=0;gi<3;gi++){ var it=document.createElement('div'); it.style.cssText='flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);'; it.innerHTML='<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div>'; gsDiv.appendChild(it); }
+            wrap.parentNode.replaceChild(gsDiv, wrap);
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
@@ -1226,7 +1226,7 @@
                     } catch(e) {}
                 }
             });
-            var gsR = document.getElementById('global-stats');
+            var gsR = document.getElementById('global-stats-wrap');
             if (gsR && gsR.children.length === 3) {
                 gsR.children[0].childNodes[0].textContent = quizList.length;
                 gsR.children[1].childNodes[0].textContent = globalTotalQuestions;
