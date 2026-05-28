@@ -482,6 +482,91 @@
             return 'QZ_' + Math.abs(hash).toString(36);
         }
 
+        // =========================================================
+        // 拆分答题
+        // =========================================================
+        var _splitQuizName = null, _splitQuizHash = null, _splitQuizCount = 0;
+        window.showSplitModal = function(quizName, quizHash, count) {
+            _splitQuizName = quizName; _splitQuizHash = quizHash; _splitQuizCount = count;
+            document.getElementById('split-modal-quiz-name').textContent = quizName + '（共 ' + count + ' 题）';
+            document.getElementById('split-start').max = count;
+            document.getElementById('split-end').max = count;
+            document.getElementById('split-start').value = '';
+            document.getElementById('split-end').value = '';
+            document.getElementById('split-modal-overlay').style.display = 'flex';
+        };
+        window.closeSplitModal = function() {
+            document.getElementById('split-modal-overlay').style.display = 'none';
+        };
+        function _getSplitKey(start, end) {
+            return currentQuizName + '_' + currentQuizHash + '_SPLIT_' + start + '-' + end;
+        }
+        window.startSplitQuiz = function(type) {
+            var quizList = getQuizList();
+            var targetQuiz = quizList.find(function(q) { return q.name === _splitQuizName && q.hash === _splitQuizHash; });
+            if (!targetQuiz) { alert("找不到该题库"); return; }
+
+            var rawText = localStorage.getItem(targetQuiz.dataKey);
+            var loadFromIdb = false;
+            if (!rawText) { loadFromIdb = true; }
+
+            var startIdx, endIdx;
+            if (type === 'half1') { startIdx = 1; endIdx = Math.floor(_splitQuizCount / 2); }
+            else if (type === 'half2') { startIdx = Math.floor(_splitQuizCount / 2) + 1; endIdx = _splitQuizCount; }
+            else if (type === 'custom') {
+                startIdx = parseInt(document.getElementById('split-start').value) || 1;
+                endIdx = parseInt(document.getElementById('split-end').value) || _splitQuizCount;
+                if (startIdx < 1) startIdx = 1;
+                if (endIdx > _splitQuizCount) endIdx = _splitQuizCount;
+                if (startIdx > endIdx) { alert("起始题号不能大于结束题号"); return; }
+            } else { return; }
+
+            closeSplitModal();
+
+            function doStart(text) {
+                var fullData = parseQuizText(text);
+                if (fullData.length === 0) { alert("解析题库失败"); return; }
+                var sliced = fullData.slice(startIdx - 1, endIdx);
+                if (sliced.length === 0) { alert("所选范围无题目"); return; }
+
+                currentQuizName = _splitQuizName;
+                currentQuizHash = _splitQuizHash + '_SPLIT_' + startIdx + '-' + endIdx;
+                currentQuestionIndex = 0;
+                quizData = sliced;
+                if (isShuffleQuestions) quizData = shuffleArray(quizData);
+                if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
+                else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
+                userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
+                    return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
+                });
+                seconds = 0; isExamFinished = false;
+                _wrongQueue = null;
+                if (isMemorizeMode && isWrongReinsert) {
+                    _wrongQueue = [];
+                    for (var qi = 0; qi < quizData.length; qi++) _wrongQueue.push(qi);
+                }
+
+                // 恢复拆分进度
+                var splitKey = _getSplitKey(startIdx, endIdx);
+                var sp = localStorage.getItem('PROGRESS_' + splitKey);
+                if (sp) { try { var dp = JSON.parse(sp); quizData = dp.quizData; userAnswers = dp.userAnswers; seconds = dp.seconds || 0; } catch(e){} }
+
+                if (isDrawerOpen) toggleSettingsDrawer();
+                setAppState('Quiz');
+            }
+
+            if (loadFromIdb) {
+                showLoading('正在加载题库...');
+                _idb.get(targetQuiz.dataKey).then(function(data) {
+                    hideLoading();
+                    if (data) doStart(data);
+                    else alert("错误：未能加载题库数据");
+                }).catch(function(){ hideLoading(); alert("错误：加载失败"); });
+            } else {
+                doStart(rawText);
+            }
+        };
+
         function saveActiveProgress() {
             if (!currentQuizName || quizData.length === 0 || !currentQuizHash) return;
             try {
@@ -1051,6 +1136,29 @@
                 var safeHashJs = escapeJsStr(quiz.hash);
                 var quizCard = document.createElement('div');
                 quizCard.className = 'quiz-card-item';
+
+                // 拆分进度扫描
+                var splitLines = '';
+                if (quiz.questionCount > 50) {
+                    var prefix = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
+                    var splitKeys = [];
+                    for (var sk = 0; sk < localStorage.length; sk++) {
+                        var lk = localStorage.key(sk);
+                        if (lk && lk.indexOf(prefix) === 0) splitKeys.push(lk);
+                    }
+                    for (var si = 0; si < splitKeys.length; si++) {
+                        try {
+                            var spData = JSON.parse(localStorage.getItem(splitKeys[si]));
+                            var rangePart = splitKeys[si].replace(prefix, '');
+                            var spAns = 0, spTotal = 0;
+                            if (spData && spData.userAnswers) { spTotal = spData.userAnswers.length; spAns = spData.userAnswers.filter(function(a){return hasAnswered(a);}).length; }
+                            splitLines += '<p style="font-size:0.78em;color:var(--color-accent-a);margin:2px 0;">📋 ' + rangePart + '：已答 ' + spAns + '/' + spTotal + '</p>';
+                        } catch(e){}
+                    }
+                }
+
+                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.85em;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">📋 拆分</button>' : '';
+
                 quizCard.innerHTML = '\
                     <h4>\
                         <span style="font-weight: 700;">' + safeName + '</span>\
@@ -1060,10 +1168,12 @@
                     </h4>\
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style: italic;">' + progressText + '</p>\
-                    <div class="quiz-actions">\
+                    ' + splitLines + '\
+                    <div class="quiz-actions" style="display:flex;gap:8px;">\
                         <button class="cta-btn cta-primary" style="padding: 10px 15px; font-size: 0.9em; flex-grow: 1;" onclick="startQuiz(\'' + safeNameJs + '\')">\
                             <span class="material-icons" style="font-size: 18px; margin-right: 5px;">play_arrow</span> ' + startBtnText + '\
                         </button>\
+                        ' + splitBtn + '\
                     </div>\
                 ';
                 quizListContainer.appendChild(quizCard);
