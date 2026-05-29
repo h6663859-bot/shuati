@@ -1060,7 +1060,7 @@
                     <h4><span style="font-weight:700;">' + safeName + '</span><button class="delete-history-btn" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons">delete</span></button></h4>\
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style:italic;">' + progressText + '</p>\
-                    <div class="quiz-actions" style="display:flex;gap:8px;">\
+                    <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;"\
                         <button class="cta-btn cta-primary" style="padding:10px 15px;font-size:0.9em;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;">play_arrow</span>' + startBtnText + '</button>\
                         ' + splitBtn + '\
                     </div>\
