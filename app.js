@@ -434,7 +434,7 @@
             hideItem.className = 'picker-item';
             hideItem.style.background = '#FAFAFC';
             hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9898\u5e93</div></div>';
-            hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
+            hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); if (appState === 'Home') renderHomePage(); else if (appState === 'Stats') renderStatsPage(); };
             listContent.appendChild(hideItem);
 
             quizList.forEach(function(quiz, index) {
@@ -455,7 +455,8 @@
                     localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
                     isCurrentCardHidden = false;
                     closeQuizPicker();
-                    renderHomePage();
+                    if (appState === 'Home') renderHomePage();
+                    else if (appState === 'Stats') renderStatsPage();
                 };
                 listContent.appendChild(item);
             });
@@ -1191,125 +1192,88 @@
             container.appendChild(quizCard);
         }
 
-        // V20.0: 统计页面 — 按题库归类折叠（Accordion）
         function renderStatsPage() {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
+            var lastScoreDisplay = document.getElementById('last-score');
             if (lastScoreDisplay) lastScoreDisplay.textContent = '--';
 
             if (quizList.length === 0) {
-                historyListContent.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">请先导入题库以查看统计和历史记录。</p>';
+                historyListContent.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;">请先导入题库以查看统计和历史记录。</p>';
                 return;
             }
 
-            var globalAnswered = 0;
-            var globalTotalQuestions = 0;
-            var hasAnyHistory = false;
-
-            quizList.forEach(function(quiz, quizIdx) {
-                var historyKey = 'HISTORY_' + quiz.name + '_' + quiz.hash;
-                var history = JSON.parse(localStorage.getItem(historyKey));
-                globalTotalQuestions += quiz.questionCount;
-
-                var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
-                var savedData = localStorage.getItem(activeKey);
-
-                if (savedData) {
-                    try {
-                        var data = JSON.parse(savedData);
-                        if (data.userAnswers && Array.isArray(data.userAnswers)) {
-                            globalAnswered += data.userAnswers.filter(function(a) {
-                                return hasAnswered(a);
-                            }).length;
-                        }
-                    } catch(e) {}
-                }
-
-                if (history && history.length > 0) {
-                    hasAnyHistory = true;
-
-                    // 创建折叠卡片容器
-                    var accordion = document.createElement('div');
-                    accordion.className = 'stats-accordion';
-
-                    // 折叠卡片头部
-                    var header = document.createElement('div');
-                    header.className = 'stats-accordion-header';
-                    header.onclick = function() { toggleAccordion(this); };
-                    var safeNameJs2 = escapeJsStr(quiz.name);
-                    var safeHashJs2 = escapeJsStr(quiz.hash);
-                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\')" title="清空该题库记录"><span class="material-icons" style="font-size:16px;">delete</span></button>';
-
-                    // 折叠卡片内容区
-                    var body = document.createElement('div');
-                    body.className = 'stats-accordion-body';
-
-                    // 渲染该题库的最近5次历史记录
-                    history.forEach(function(record, hIdx) {
-                        var total = record.quizData.length;
-                        var correctCount = 0;
-
-                        record.quizData.forEach(function(q, qIdx) {
-                            if (checkAnswer(q, record.userAnswers[qIdx])) {
-                                correctCount++;
-                            }
-                        });
-
-                        var wrongCount = total - correctCount;
-                        var score = ((correctCount / total) * 100).toFixed(1);
-                        var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
-                        var dateStr = new Date(record.timestamp).toLocaleString();
-
-                        if (quizIdx === 0 && hIdx === 0 && lastScoreDisplay) {
-                            lastScoreDisplay.innerHTML = score + '分 (用时 ' + timeStr + ')';
-                            lastScoreDisplay.style.color = score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
-                        }
-
-                        var safeNameJs2 = escapeJsStr(quiz.name);
-                        var safeHashJs2 = escapeJsStr(quiz.hash);
-                        var splitTag = record.splitLabel ? '<span style="background:var(--color-background);border:1px solid var(--color-primary);color:var(--color-primary);padding:2px 6px;border-radius:6px;font-size:0.75em;margin-right:6px;font-weight:600;">拆分 ' + record.splitLabel + '</span>' : '';
-                        var historyCard = document.createElement('div');
-                        historyCard.className = 'history-card';
-                        historyCard.innerHTML = '\
-                            <button class="delete-history-btn" onclick="event.stopPropagation(); deleteHistoryRecord(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ', this)" title="删除此条记录">\
-                                <span class="material-icons">delete</span>\
-                            </button>\
-                            <div style="margin:0;font-size:0.9em;padding-right:30px;line-height:1.7;color:var(--color-text-main);">\
-                                <div style="margin-bottom:2px;">' + splitTag + '<strong>得分: <span style="font-size:1.05em;color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> <span style="color:var(--color-border-light);margin:0 6px;">|</span> 对/错: ' + correctCount + '/' + wrongCount + '</div>\
-                                <div style="color:var(--color-text-secondary);font-size:0.9em;">用时: ' + timeStr + '</div>\
-                                <div style="font-size:0.85em;color:#A0A0A5;margin-top:2px;">' + dateStr + '</div>\
-                            </div>\
-                            <div style="display:flex;gap:10px;margin-top:14px;">\
-                                <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:var(--color-primary);color:white;font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;">\
-                                    <span class="material-icons" style="font-size:18px;">manage_search</span> 回顾错题\
-                                </button>\
-                                <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:var(--color-wrong);color:white;font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;"' + (wrongCount === 0 ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') + '>\
-                                    <span class="material-icons" style="font-size:18px;">replay</span> 重做 (' + wrongCount + ')\
-                                </button>\
-                            </div>\
-                        ';
-                        body.appendChild(historyCard);
-                    });
-
-                    accordion.appendChild(header);
-                    accordion.appendChild(body);
-                    historyListContent.appendChild(accordion);
-                }
+            var globalAnswered = 0, globalTotalQuestions = 0;
+            quizList.forEach(function(q) {
+                globalTotalQuestions += q.questionCount;
+                try { var p = JSON.parse(localStorage.getItem('PROGRESS_' + q.name + '_' + q.hash)); if (p && p.userAnswers) globalAnswered += p.userAnswers.filter(hasAnswered).length; } catch(e) {}
             });
-
-            if (!hasAnyHistory) {
-                historyListContent.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无历史记录。请先完成一次答题。</p>';
-            }
 
             var wrap = document.getElementById('global-stats-wrap');
             if (wrap) {
                 wrap.innerHTML = '';
                 wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;';
                 var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
-                for(var gi=0;gi<3;gi++){
-                    wrap.innerHTML += '<div style="flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);"><div style="font-size:1.4em;font-weight:700;color:var(--color-primary);">'+items[gi].v+'</div><div style="font-size:0.75em;color:var(--color-text-secondary);">'+items[gi].l+'</div></div>';
-                }
+                for(var gi=0;gi<3;gi++){ wrap.innerHTML += '<div style="flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:12px;padding:16px 8px;text-align:center;border:1px solid rgba(0,0,0,0.03);"><div style="font-size:1.5em;font-weight:700;color:var(--color-text-main);">'+items[gi].v+'</div><div style="font-size:0.75em;color:var(--color-text-secondary);margin-top:4px;">'+items[gi].l+'</div></div>'; }
             }
+
+            var currentQuiz = quizList[0];
+            var safeNameJs2 = escapeJsStr(currentQuiz.name);
+            var safeHashJs2 = escapeJsStr(currentQuiz.hash);
+            var historyKey = 'HISTORY_' + currentQuiz.name + '_' + currentQuiz.hash;
+            var history = JSON.parse(localStorage.getItem(historyKey)) || [];
+
+            if (history.length > 0 && lastScoreDisplay) {
+                var firstR = history[0];
+                var cCount = 0;
+                firstR.quizData.forEach(function(q, i){ if(checkAnswer(q, firstR.userAnswers[i])) cCount++; });
+                var sc = ((cCount / firstR.quizData.length) * 100).toFixed(1);
+                lastScoreDisplay.innerHTML = sc + '分 (用时 ' + new Date(firstR.seconds * 1000).toISOString().substr(11,8) + ')';
+                lastScoreDisplay.style.color = sc >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
+            }
+
+            var headerHtml = document.createElement('div');
+            headerHtml.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,0.04);';
+            headerHtml.innerHTML = '<h3 style="margin:0;font-size:1.05em;font-weight:700;color:var(--color-text-main);">' + escapeHtml(currentQuiz.name) + '</h3><button onclick="openQuizPicker()" style="background:rgba(0,0,0,0.04);border:none;padding:6px 12px;border-radius:14px;color:var(--color-text-main);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s;"><span class="material-icons" style="font-size:16px;">swap_vert</span>切换</button>';
+            historyListContent.appendChild(headerHtml);
+
+            if (history.length === 0) {
+                var empty = document.createElement('p');
+                empty.style.cssText = 'color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;';
+                empty.textContent = '该题库暂无历史记录。';
+                historyListContent.appendChild(empty);
+                return;
+            }
+
+            history.forEach(function(record, hIdx) {
+                var total = record.quizData.length;
+                var correctCount = 0;
+                record.quizData.forEach(function(q, qIdx) { if (checkAnswer(q, record.userAnswers[qIdx])) correctCount++; });
+                var wrongCount = total - correctCount;
+                var score = ((correctCount / total) * 100).toFixed(1);
+                var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
+                var dateStr = new Date(record.timestamp).toLocaleString();
+                var splitTag = record.splitLabel ? '<span style="background:var(--color-background);border:1px solid var(--color-primary);color:var(--color-primary);padding:2px 6px;border-radius:6px;font-size:0.75em;margin-right:6px;font-weight:600;">拆分 ' + record.splitLabel + '</span>' : '';
+
+                var historyCard = document.createElement('div');
+                historyCard.className = 'history-card';
+                historyCard.style.cssText = 'border-left:none;background:#FFFFFF;border:1px solid rgba(0,0,0,0.04);box-shadow:0 4px 16px rgba(0,0,0,0.02);margin-top:0;margin-bottom:12px;border-radius:16px;position:relative;overflow:hidden;';
+                historyCard.innerHTML = '\
+                    <button class="delete-history-btn" onclick="event.stopPropagation();deleteHistoryRecord(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ',this)" style="border:none;background:rgba(0,0,0,0.03);color:var(--color-text-secondary);"><span class="material-icons">delete</span></button>\
+                    <div style="margin:0;font-size:0.9em;padding-right:30px;line-height:1.7;color:var(--color-text-main);">\
+                        <div style="margin-bottom:4px;">' + splitTag + '<strong>得分: <span style="font-size:1.15em;color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> <span style="color:rgba(0,0,0,0.1);margin:0 6px;">|</span> 对/错: ' + correctCount + '/' + wrongCount + '</div>\
+                        <div style="color:var(--color-text-secondary);font-size:0.9em;display:flex;justify-content:space-between;align-items:center;">\
+                            <span>用时: ' + timeStr + '</span>\
+                            <span style="font-size:0.85em;color:#A0A0A5;">' + dateStr + '</span>\
+                        </div>\
+                    </div>\
+                    <div style="display:flex;gap:10px;margin-top:14px;">\
+                        <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:#F5F5F7;color:var(--color-primary);font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;"><span class="material-icons" style="font-size:18px;">manage_search</span> 回顾错题</button>\
+                        <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:#FFF5F5;color:var(--color-wrong);font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;"' + (wrongCount === 0 ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') + '><span class="material-icons" style="font-size:18px;">replay</span> 重做 (' + wrongCount + ')</button>\
+                    </div>\
+                ';
+                historyListContent.appendChild(historyCard);
+            });
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
