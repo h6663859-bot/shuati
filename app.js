@@ -346,14 +346,21 @@
         // =========================================================
         window.toggleQuizListCollapse = function() {
             isQuizListCollapsed = !isQuizListCollapsed;
+            var bar = document.getElementById('quiz-list-collapse-bar');
+            var btn = document.getElementById('quiz-list-collapse-btn');
+            var wrapper = document.getElementById('quiz-list-scroll-wrapper');
             if (isQuizListCollapsed) {
-                quizListScrollWrapper.classList.add('collapsed');
-                quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
-                quizListCollapseText.textContent = '展开';
+                wrapper.classList.add('collapsed');
+                bar.style.borderTop = 'none'; bar.style.paddingTop = '0';
+                btn.style.width = '100%'; btn.style.justifyContent = 'center';
+                btn.style.background = '#F0F4F8'; btn.style.padding = '14px'; btn.style.border = 'none'; btn.style.color = 'var(--color-primary)';
+                btn.innerHTML = '<span class="material-icons" style="margin-right:8px;font-size:22px;">folder_zip</span><span style="font-weight:bold;font-size:1.05em;">已折叠题库列表，点击展开</span>';
             } else {
-                quizListScrollWrapper.classList.remove('collapsed');
-                quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
-                quizListCollapseText.textContent = '收起';
+                wrapper.classList.remove('collapsed');
+                bar.style.borderTop = '1px dashed var(--color-border-light)'; bar.style.paddingTop = '10px';
+                btn.style.width = 'auto'; btn.style.justifyContent = 'center';
+                btn.style.background = '#fff'; btn.style.padding = '6px 16px'; btn.style.border = '1px solid var(--color-border-light)'; btn.style.color = 'var(--color-text-secondary)';
+                btn.innerHTML = '<span class="material-icons">unfold_less</span><span id="quiz-list-collapse-text">收起</span>';
             }
         };
 
@@ -665,7 +672,7 @@
             currentQuestionIndex = 0;
 
             var loadedProgress = false;
-            if (!loadActiveProgress(quizName, targetQuiz.hash)) {
+            if (!loadActiveProgress(quizName, currentQuizHash)) {
                 quizData = parseQuizText(rawText);
                 userAnswers = new Array(quizData.length).fill(null).map(function(_, i) {
                     return quizData[i].type.indexOf('多选') !== -1 ? [] : null;
@@ -1079,16 +1086,18 @@
 
             if (isQuizListCollapsed) {
                 quizListScrollWrapper.classList.add('collapsed');
-                if (quizListCollapseBtn) {
-                    quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_more';
-                }
-                if (quizListCollapseText) { quizListCollapseText.textContent = '展开'; }
+                quizListCollapseBar.style.borderTop = 'none'; quizListCollapseBar.style.paddingTop = '0';
+                quizListCollapseBtn.style.width = '100%'; quizListCollapseBtn.style.justifyContent = 'center';
+                quizListCollapseBtn.style.background = '#F0F4F8'; quizListCollapseBtn.style.padding = '14px'; quizListCollapseBtn.style.border = 'none'; quizListCollapseBtn.style.color = 'var(--color-primary)';
+                quizListCollapseBtn.innerHTML = '<span class="material-icons" style="margin-right:8px;font-size:22px;">folder_zip</span><span style="font-weight:bold;font-size:1.05em;">已折叠 ' + quizList.length + ' 个题库，点击展开</span>';
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
-                if (quizListCollapseBtn) {
-                    quizListCollapseBtn.querySelector('.material-icons').textContent = 'unfold_less';
-                }
+                quizListCollapseBar.style.borderTop = '1px dashed var(--color-border-light)'; quizListCollapseBar.style.paddingTop = '10px';
+                quizListCollapseBtn.style.width = 'auto'; quizListCollapseBtn.style.justifyContent = 'center';
+                quizListCollapseBtn.style.background = '#fff'; quizListCollapseBtn.style.padding = '6px 16px'; quizListCollapseBtn.style.border = '1px solid var(--color-border-light)'; quizListCollapseBtn.style.color = 'var(--color-text-secondary)';
                 if (quizListCollapseText) { quizListCollapseText.textContent = '收起'; }
+                var icon = quizListCollapseBtn.querySelector('.material-icons');
+                if (icon) { icon.textContent = 'unfold_less'; }
             }
         }
 
