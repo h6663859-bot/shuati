@@ -584,12 +584,17 @@
             border-radius: var(--border-radius-card);
         }
         .option-item.correct-answer-bg {
-            background-color: #E8F5E9 !important;
-            border-color: var(--color-correct) !important;
+            background-color: #F8FAFC !important;
+            border-color: var(--color-primary) !important;
+            border-width: 1.5px !important;
+            color: var(--color-text-main) !important;
+            font-weight: 600 !important;
         }
         .option-item.wrong-selected-bg {
-            background-color: #FFEBEE !important;
+            background-color: #FFF5F5 !important;
             border-color: var(--color-wrong) !important;
+            border-width: 1.5px !important;
+            color: var(--color-text-main) !important;
         }
 
         #submit-btn {
@@ -694,15 +699,17 @@
         }
 
         .option-item.memorize-correct {
-            background-color: #E8F5E9 !important;
-            border-color: var(--color-correct) !important;
-            border-width: 2px !important;
-            font-weight: bold;
+            background-color: #F8FAFC !important;
+            border-color: var(--color-primary) !important;
+            border-width: 1.5px !important;
+            color: var(--color-text-main) !important;
+            font-weight: 600 !important;
         }
         .option-item.memorize-wrong {
-            background-color: #FFEBEE !important;
+            background-color: #FFF5F5 !important;
             border-color: var(--color-wrong) !important;
-            border-width: 2px !important;
+            border-width: 1.5px !important;
+            color: var(--color-text-main) !important;
         }
         .option-item.memorize-disabled {
             pointer-events: none !important;
