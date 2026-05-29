@@ -364,14 +364,21 @@
             var accordion = header.parentElement;
             var body = accordion.querySelector('.stats-accordion-body');
             if (accordion.classList.contains('open')) {
-                accordion.classList.remove('open');
                 body.style.maxHeight = body.scrollHeight + 'px';
-                requestAnimationFrame(function(){ body.style.maxHeight = '0px'; });
-                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); body.style.maxHeight = ''; });
+                accordion.offsetHeight;
+                accordion.classList.remove('open');
+                body.style.maxHeight = '0px';
+                body.addEventListener('transitionend', function h(){
+                    body.removeEventListener('transitionend', h);
+                    if (!accordion.classList.contains('open')) { body.style.maxHeight = ''; }
+                });
             } else {
                 accordion.classList.add('open');
-                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
-                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); body.style.maxHeight = ''; });
+                body.style.maxHeight = body.scrollHeight + 20 + 'px';
+                body.addEventListener('transitionend', function h(){
+                    body.removeEventListener('transitionend', h);
+                    if (accordion.classList.contains('open')) { body.style.maxHeight = 'none'; }
+                });
             }
         };
 
