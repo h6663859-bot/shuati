@@ -81,7 +81,10 @@
         }
 
         .cta-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             width: 100%;
             padding: 16px 20px;
             border: none;
@@ -89,7 +92,6 @@
             font-weight: bold;
             font-size: 1.05em;
             cursor: pointer;
-            text-align: center;
             transition: all 0.2s ease;
             margin-top: 15px;
             color: var(--color-card-bg);
