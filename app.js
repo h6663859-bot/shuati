@@ -374,10 +374,12 @@
                 });
             } else {
                 accordion.classList.add('open');
-                body.style.maxHeight = body.scrollHeight + 20 + 'px';
+                var targetHeight = body.scrollHeight + 20;
+                var finalHeight = targetHeight > 320 ? 320 : targetHeight;
+                body.style.maxHeight = finalHeight + 'px';
                 body.addEventListener('transitionend', function h(){
                     body.removeEventListener('transitionend', h);
-                    if (accordion.classList.contains('open')) { body.style.maxHeight = 'none'; }
+                    if (accordion.classList.contains('open')) { body.style.maxHeight = '320px'; }
                 });
             }
         };

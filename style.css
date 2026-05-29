@@ -416,7 +416,13 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 12px 16px;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
         }
+        .stats-accordion.open .stats-accordion-body::-webkit-scrollbar { width: 6px; }
+        .stats-accordion.open .stats-accordion-body::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
+        .stats-accordion.open .stats-accordion-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .stats-accordion.open .stats-accordion-body::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
         .history-card {
             border-left: 5px solid var(--color-accent-a);
