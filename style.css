@@ -129,15 +129,15 @@
         }
 
         .cta-warning {
-            background-color: transparent;
+            background-color: rgba(0, 0, 0, 0.035);
             color: var(--color-text-secondary);
-            border: 1.5px solid var(--color-border-light);
+            border: 1px solid rgba(0, 0, 0, 0.01);
             margin-top: 12px;
         }
         .cta-warning:hover {
-            background-color: #FFF5F5;
-            color: var(--color-wrong);
-            border-color: #FFD6D6;
+            background-color: rgba(0, 0, 0, 0.06);
+            color: var(--color-text-main);
+            border-color: rgba(0, 0, 0, 0.03);
         }
 
         .btn-secondary {
