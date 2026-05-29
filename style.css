@@ -129,9 +129,9 @@
         }
 
         .cta-warning {
-            background-color: rgba(0, 0, 0, 0.035);
+            background-color: transparent;
             color: var(--color-text-secondary);
-            border: 1px solid rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--color-border-light);
             margin-top: 12px;
         }
         .cta-warning:hover {
