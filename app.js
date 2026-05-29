@@ -1061,7 +1061,7 @@
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style:italic;">' + progressText + '</p>\
                     <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;"\
-                        <button class="cta-btn cta-primary" style="padding:10px 15px;font-size:0.9em;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;">play_arrow</span>' + startBtnText + '</button>\
+                        <button class="cta-btn cta-primary" style="padding:12px 18px;font-size:0.95em;flex-grow:1;color:#fff;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:20px;margin-right:8px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
                         ' + splitBtn + '\
                     </div>\
                 ';
@@ -1737,13 +1737,6 @@
             // V20.0: 加载持久化设置并同步UI
             loadSettings();
             applySettingsToUI();
-
-            // 标题占位按钮（视觉居中，仅手机）
-            if (window.innerWidth <= 768) {
-                var spacer = document.createElement('div');
-                spacer.style.cssText = 'position:fixed;top:12px;left:16px;z-index:1500;width:40px;height:40px;visibility:hidden;';
-                document.body.appendChild(spacer);
-            }
 
             var isMobile = window.innerWidth <= 768;
             if (!isMobile) {
