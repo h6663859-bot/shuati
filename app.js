@@ -26,6 +26,7 @@
         let isWrongReinsert = false;
         var _wrongQueue = null;
         let isCurrentCardHidden = false;
+        let isHistoryHidden = false;
         // V17.0: 设置抽屉状态 & 题库列表折叠状态
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
@@ -433,8 +434,13 @@
             var hideItem = document.createElement('div');
             hideItem.className = 'picker-item';
             hideItem.style.background = '#FAFAFC';
-            hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9898\u5e93</div></div>';
-            hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); if (appState === 'Home') renderHomePage(); else if (appState === 'Stats') renderStatsPage(); };
+            if (typeof appState !== 'undefined' && appState === 'Stats') {
+                hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u5386\u53f2\u8bb0\u5f55</div></div>';
+                hideItem.onclick = function() { isHistoryHidden = true; closeQuizPicker(); renderStatsPage(); };
+            } else {
+                hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9898\u5e93</div></div>';
+                hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
+            }
             listContent.appendChild(hideItem);
 
             quizList.forEach(function(quiz, index) {
@@ -453,10 +459,9 @@
                         }
                     }
                     localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
-                    isCurrentCardHidden = false;
                     closeQuizPicker();
-                    if (appState === 'Home') renderHomePage();
-                    else if (appState === 'Stats') renderStatsPage();
+                    if (appState === 'Home') { isCurrentCardHidden = false; renderHomePage(); }
+                    else if (appState === 'Stats') { isHistoryHidden = false; renderStatsPage(); }
                 };
                 listContent.appendChild(item);
             });
@@ -487,6 +492,12 @@
             localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
             openQuizPicker();
             renderHomePage();
+        };
+
+        window.clearAllHistoryOfQuiz = function(name, hash) {
+            if (!confirm('确定要清空题库\u300c' + name + '\u300d的所有答题历史记录吗？\n此操作将不可恢复！')) return;
+            localStorage.removeItem('HISTORY_' + name + '_' + hash);
+            renderStatsPage();
         };
 
         // =========================================================
@@ -1232,9 +1243,17 @@
                 lastScoreDisplay.style.color = sc >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
             }
 
+            if (isHistoryHidden) {
+                var hiddenWrap = document.createElement('div');
+                hiddenWrap.style.cssText = 'text-align:center;padding:40px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;';
+                hiddenWrap.innerHTML = '<p style="color:var(--color-text-secondary);margin:0;font-size:0.95em;font-style:italic;">历史记录隐藏</p><button onclick="openQuizPicker()" style="padding:10px 24px;border:none;border-radius:12px;background:rgba(0,0,0,0.035);color:var(--color-text-main);font-size:0.9em;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.2s;"><span class="material-icons" style="font-size:18px;">visibility</span>查看历史记录</button>';
+                historyListContent.appendChild(hiddenWrap);
+                return;
+            }
+
             var headerHtml = document.createElement('div');
             headerHtml.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,0.04);';
-            headerHtml.innerHTML = '<h3 style="margin:0;font-size:1.05em;font-weight:700;color:var(--color-text-main);">' + escapeHtml(currentQuiz.name) + '</h3><button onclick="openQuizPicker()" style="background:rgba(0,0,0,0.04);border:none;padding:6px 12px;border-radius:14px;color:var(--color-text-main);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s;"><span class="material-icons" style="font-size:16px;">swap_vert</span>切换</button>';
+            headerHtml.innerHTML = '<div style="display:flex;align-items:center;gap:6px;max-width:70%;"><h3 style="margin:0;font-size:1.05em;font-weight:700;color:var(--color-text-main);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(currentQuiz.name) + '</h3><button onclick="clearAllHistoryOfQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\')" style="border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer;padding:4px;display:inline-flex;align-items:center;transition:color 0.2s;" onmouseover="this.style.color=\'var(--color-wrong)\'" onmouseout="this.style.color=\'var(--color-text-secondary)\'" title="清空此题库全部历史"><span class="material-icons" style="font-size:20px;">delete</span></button></div><button onclick="openQuizPicker()" style="background:rgba(0,0,0,0.035);border:none;padding:6px 14px;border-radius:12px;color:var(--color-text-main);font-weight:600;font-size:0.9em;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s;"><span class="material-icons" style="font-size:16px;">swap_vert</span>切换</button>';
             historyListContent.appendChild(headerHtml);
 
             if (history.length === 0) {
