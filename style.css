@@ -51,22 +51,22 @@
             left: auto;
             transform: none;
             width: auto;
-            font-size: 1.5em;
+            font-size: 1.7em;
             font-weight: 700;
             color: #000;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
         }
 
         #app {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px 20px 0;
-            padding-top: 90px;
+            padding-top: 96px;
         }
         @media (max-width: 768px) {
-            #app { padding: 10px 10px 0; padding-top: 52px; }
+            #app { padding: 10px 10px 0; padding-top: 58px; }
             #top-header { padding: 10px 16px; height: 34px; }
-            #top-header h1 { font-size: 1.1em; }
+            #top-header h1 { font-size: 1.4em; margin-bottom: 6px; }
         }
 
         .card {
