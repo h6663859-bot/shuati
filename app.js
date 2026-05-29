@@ -404,14 +404,36 @@
         };
 
         window.openQuizPicker = function() {
+            if (!document.getElementById('picker-dynamic-styles')) {
+                var style = document.createElement('style');
+                style.id = 'picker-dynamic-styles';
+                style.textContent = '.picker-item{display:flex;align-items:center;justify-content:space-between;padding:14px 12px;border-bottom:1px solid rgba(0,0,0,0.04);cursor:pointer;transition:background 0.2s;}.picker-item:active{background-color:#F5F5F7;}.picker-item-left{display:flex;align-items:center;gap:10px;flex-grow:1;}.picker-title{font-weight:600;font-size:0.95em;color:var(--color-text-main);}.picker-meta{font-size:0.75em;color:var(--color-text-secondary);margin-top:2px;}.picker-delete-btn{background:transparent;border:none;color:var(--color-text-secondary);cursor:pointer;padding:4px;display:flex;align-items:center;}.picker-delete-btn:hover{color:var(--color-wrong);}';
+                document.head.appendChild(style);
+            }
+
+            if (!document.getElementById('quiz-picker-drawer')) {
+                var overlay = document.createElement('div');
+                overlay.id = 'picker-overlay';
+                overlay.onclick = closeQuizPicker;
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:2500;opacity:0;visibility:hidden;transition:all 0.3s ease;';
+                document.body.appendChild(overlay);
+                var drawer = document.createElement('div');
+                drawer.id = 'quiz-picker-drawer';
+                drawer.style.cssText = 'position:fixed;bottom:0;left:0;width:100%;max-height:65vh;background:#FFFFFF;z-index:2600;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,0.15);box-sizing:border-box;padding:16px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);overflow-y:auto;';
+                drawer.innerHTML = '<div style=\"width:36px;height:4px;background:#E5E5EA;border-radius:2px;margin:0 auto 16px;\"></div><h3 style=\"margin:0 0 12px 4px;font-size:1.05em;font-weight:700;color:var(--color-text-main);display:flex;align-items:center;gap:6px;\"><span class=\"material-icons\" style=\"font-size:20px;\">list</span>\u9009\u62e9\u9898\u5e93</h3><div id=\"picker-list-content\"></div>';
+                document.body.appendChild(drawer);
+            }
+
             var quizList = getQuizList();
             var listContent = document.getElementById('picker-list-content');
             listContent.innerHTML = '';
 
+            if (typeof isCurrentCardHidden === 'undefined') { isCurrentCardHidden = false; }
+
             var hideItem = document.createElement('div');
             hideItem.className = 'picker-item';
             hideItem.style.background = '#FAFAFC';
-            hideItem.innerHTML = '<div class="picker-item-left"><span class="material-icons" style="color:var(--color-text-secondary);font-size:20px;">visibility_off</span><div class="picker-title" style="color:var(--color-text-secondary);font-weight:500;">隐藏首页题库卡片</div></div>';
+            hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9996\u9875\u9898\u5e93\u5361\u7247</div></div>';
             hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
             listContent.appendChild(hideItem);
 
@@ -420,26 +442,36 @@
                 item.className = 'picker-item';
                 var sNameJs = escapeJsStr(quiz.name);
                 var sHashJs = escapeJsStr(quiz.hash);
-                item.innerHTML = '<div class="picker-item-left"><span class="material-icons" style="color:var(--color-primary);font-size:20px;">description</span><div><div class="picker-title">' + escapeHtml(quiz.name) + '</div><div class="picker-meta">总题数: ' + quiz.questionCount + '</div></div></div><button class="picker-delete-btn" onclick="event.stopPropagation();deleteQuizFromPicker(\'' + sNameJs + '\',\'' + sHashJs + '\')"><span class="material-icons" style="font-size:18px;">delete</span></button>';
-                item.onclick = (function(idx) { return function() {
+                item.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-primary);font-size:20px;\">description</span><div><div class=\"picker-title\">' + escapeHtml(quiz.name) + '</div><div class=\"picker-meta\">\u603b\u9898\u6570: ' + quiz.questionCount + '</div></div></div><button class=\"picker-delete-btn\" onclick=\"event.stopPropagation();deleteQuizFromPicker(\'' + sNameJs + '\',\'' + sHashJs + '\')\"><span class=\"material-icons\" style=\"font-size:18px;\">delete</span></button>';
+                item.onclick = function() {
                     var list = getQuizList();
-                    var target = list.splice(idx, 1)[0];
-                    list.unshift(target);
+                    for (var di = 0; di < list.length; di++) {
+                        if (list[di].name === quiz.name && list[di].hash === quiz.hash) {
+                            var target = list.splice(di, 1)[0];
+                            list.unshift(target);
+                            break;
+                        }
+                    }
                     localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
                     isCurrentCardHidden = false;
                     closeQuizPicker();
                     renderHomePage();
-                }; })(index);
+                };
                 listContent.appendChild(item);
             });
 
-            document.getElementById('picker-overlay').classList.add('visible');
-            document.getElementById('quiz-picker-drawer').classList.add('visible');
+            var overlay = document.getElementById('picker-overlay');
+            var drawer = document.getElementById('quiz-picker-drawer');
+            overlay.style.visibility = 'visible';
+            overlay.style.opacity = '1';
+            drawer.style.transform = 'translateY(0)';
         };
 
         window.closeQuizPicker = function() {
-            document.getElementById('picker-overlay').classList.remove('visible');
-            document.getElementById('quiz-picker-drawer').classList.remove('visible');
+            var overlay = document.getElementById('picker-overlay');
+            var drawer = document.getElementById('quiz-picker-drawer');
+            if (overlay) { overlay.style.opacity = '0'; setTimeout(function() { overlay.style.visibility = 'hidden'; }, 300); }
+            if (drawer) { drawer.style.transform = 'translateY(100%)'; }
         };
 
         window.deleteQuizFromPicker = function(name, hash) {
@@ -1133,7 +1165,7 @@
             var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
             if (localStorage.getItem(activeKey)) { startBtnText = '继续答题'; }
 
-            var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:rgba(0,0,0,0.04);color:var(--color-text-main);cursor:pointer;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+            var splitBtn = quiz.questionCount > 50 ? '<button style="padding:12px 16px;font-size:0.95em;font-weight:600;border:none;border-radius:10px;background:#F5F5F7;color:var(--color-primary);cursor:pointer;flex-shrink:0;transition:all 0.2s;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
             var quizCard = document.createElement('div');
             quizCard.style.cssText = 'margin-bottom:0;box-shadow:none;padding:8px 0;';
