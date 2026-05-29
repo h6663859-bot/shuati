@@ -1085,7 +1085,6 @@
 
         // V20.0: 统计页面 — 按题库归类折叠（Accordion）
         function renderStatsPage() {
-            try {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
             lastScoreDisplay.textContent = '--';
@@ -1129,7 +1128,7 @@
                     var header = document.createElement('div');
                     header.className = 'stats-accordion-header';
                     header.onclick = function() { toggleAccordion(this); };
-                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + escapeJsStr(quiz.name) + '\',\'' + escapeJsStr(quiz.hash) + '\')" title="清空历史"><span class="material-icons" style="font-size:16px;">delete</span></button>';
+                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span>';
 
                     // 折叠卡片内容区
                     var body = document.createElement('div');
@@ -1194,11 +1193,7 @@
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
             }
 
-            var wrap = document.getElementById('global-stats-wrap');
-            if (wrap) { wrap.innerHTML = ''; wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
-            var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
-            for(var gi=0;gi<3;gi++){ wrap.innerHTML += '<div style=\"flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);\"><div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div></div>'; } }
-            } catch(e) { showToast('统计加载异常，请刷新重试', 'error'); }
+            document.getElementById('last-score').textContent = '--';
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
@@ -1743,6 +1738,13 @@
             loadSettings();
             applySettingsToUI();
 
+            // 标题占位按钮（视觉居中，仅手机）
+            if (window.innerWidth <= 768) {
+                var spacer = document.createElement('div');
+                spacer.style.cssText = 'position:fixed;top:12px;left:16px;z-index:1500;width:40px;height:40px;visibility:hidden;';
+                document.body.appendChild(spacer);
+            }
+
             var isMobile = window.innerWidth <= 768;
             if (!isMobile) {
                 bottomNav.style.display = 'none';
@@ -1970,8 +1972,8 @@
         window.addEventListener('beforeunload', function(){ saveActiveProgress(); });
 
         // 全局异常捕获：出错时 toast 提示而非静默崩溃
-        window.onerror = function(msg) {
-            showToast('程序异常，请刷新页面后重试', 'error');
+        window.onerror = function(msg, url, line) {
+            showToast('出错: ' + String(msg).substring(0,60) + ' (行' + line + ')', 'error');
             return true;
         };
 
