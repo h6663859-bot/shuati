@@ -1061,7 +1061,7 @@
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style:italic;">' + progressText + '</p>\
                     <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;"\
-                        <button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:var(--color-primary);color:#fff;cursor:pointer;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;">play_arrow</span>' + startBtnText + '</button>\
+                        <button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:#003153;color:#fff;cursor:pointer;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
                         ' + splitBtn + '\
                     </div>\
                 ';
@@ -1193,7 +1193,15 @@
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
             }
 
-            document.getElementById('last-score').textContent = '--';
+            var wrap = document.getElementById('global-stats-wrap');
+            if (wrap) {
+                wrap.innerHTML = '';
+                wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;';
+                var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
+                for(var gi=0;gi<3;gi++){
+                    wrap.innerHTML += '<div style="flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);"><div style="font-size:1.4em;font-weight:700;color:var(--color-primary);">'+items[gi].v+'</div><div style="font-size:0.75em;color:var(--color-text-secondary);">'+items[gi].l+'</div></div>';
+                }
+            }
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
@@ -1216,9 +1224,9 @@
                 }
             });
             var gsR = document.getElementById('global-stats-wrap');
-            if (gsR && gsR.children.length === 3) {
+            if (gsR) {
                 gsR.innerHTML = '';
-                gsR.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+                gsR.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;';
                 var itms = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
                 for(var gi=0;gi<3;gi++){ gsR.innerHTML += '<div style=\"flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);\"><div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+itms[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+itms[gi].l+'</div></div>'; }
             }
