@@ -40,7 +40,8 @@
             background-color: var(--color-card-bg);
             box-shadow: var(--shadow-header);
             padding: 15px 20px;
-            padding-top: calc(15px + env(safe-area-inset-top, 0px));
+            padding-top: calc(20px + env(safe-area-inset-top, 0px));
+            padding-bottom: 10px;
             z-index: 1000;
             display: block;
             height: 40px;
@@ -61,11 +62,11 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px 20px 0;
-            padding-top: 96px;
+            padding-top: 84px;
         }
         @media (max-width: 768px) {
-            #app { padding: 10px 10px 0; padding-top: 58px; }
-            #top-header { padding: 10px 16px; height: 34px; }
+            #app { padding: 10px 10px 0; padding-top: 62px; }
+            #top-header { padding: 12px 16px 8px; padding-top: calc(18px + env(safe-area-inset-top, 0px)); height: 40px; }
             #top-header h1 { font-size: 1.4em; margin-bottom: 6px; }
         }
 
