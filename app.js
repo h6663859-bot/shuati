@@ -1193,13 +1193,10 @@
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
             }
 
-            var gsOld = document.getElementById('global-stats');
-            var wrap = gsOld.parentNode;
-            var gsDiv = document.createElement('div'); gsDiv.id = 'global-stats-wrap';
-            gsDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+            var wrap = document.getElementById('global-stats-wrap');
+            if (wrap) { wrap.innerHTML = ''; wrap.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
             var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
-            for(var gi=0;gi<3;gi++){ var it=document.createElement('div'); it.style.cssText='flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);'; it.innerHTML='<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div>'; gsDiv.appendChild(it); }
-            wrap.parentNode.replaceChild(gsDiv, wrap);
+            for(var gi=0;gi<3;gi++){ wrap.innerHTML += '<div style=\"flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);\"><div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div></div>'; } }
             } catch(e) { showToast('统计加载异常，请刷新重试', 'error'); }
         }
 
@@ -1224,9 +1221,10 @@
             });
             var gsR = document.getElementById('global-stats-wrap');
             if (gsR && gsR.children.length === 3) {
-                gsR.children[0].childNodes[0].textContent = quizList.length;
-                gsR.children[1].childNodes[0].textContent = globalTotalQuestions;
-                gsR.children[2].childNodes[0].textContent = globalAnswered;
+                gsR.innerHTML = '';
+                gsR.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+                var itms = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
+                for(var gi=0;gi<3;gi++){ gsR.innerHTML += '<div style=\"flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);\"><div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+itms[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+itms[gi].l+'</div></div>'; }
             }
 
             // 更新上次得分（取第一条记录）
