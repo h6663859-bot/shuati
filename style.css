@@ -11,10 +11,10 @@
             --color-card-bg: #FFFFFF;
             --color-text-main: #1D1D1F;
             --color-text-secondary: #86868B;
-            --color-border-light: rgba(0, 0, 0, 0.05);
-            --border-radius-card: 18px;
-            --border-radius-button: 12px;
-            --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.04);
+            --color-border-light: rgba(0, 0, 0, 0.03);
+            --border-radius-card: 20px;
+            --border-radius-button: 14px;
+            --shadow-subtle: 0 10px 40px rgba(0, 0, 0, 0.04);
         }
 
         body {
@@ -29,6 +29,22 @@
             overflow-x: hidden;
             -webkit-user-select: none;
             user-select: none;
+        }
+
+        .material-icons {
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: 300 !important;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
         }
 
         #top-header {
@@ -90,37 +106,38 @@
             padding: 16px 20px;
             border: none;
             border-radius: var(--border-radius-button);
-            font-weight: bold;
+            font-weight: 600;
             font-size: 1.05em;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
             margin-top: 15px;
-            color: var(--color-card-bg);
             -webkit-tap-highlight-color: transparent;
         }
         .cta-btn:active {
-            transform: scale(0.97);
-            opacity: 0.85;
+            transform: scale(0.96);
         }
 
         .cta-primary {
             background-color: var(--color-primary);
-            color: var(--color-card-bg);
+            color: #FFFFFF;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
         .cta-primary:hover {
-            opacity: 0.9;
+            opacity: 0.95;
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0, 49, 83, 0.4);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
         }
 
         .cta-warning {
-            background-color: var(--color-accent-b);
-            color: var(--color-text-main);
-            margin-top: 10px;
+            background-color: transparent;
+            color: var(--color-text-secondary);
+            border: 1.5px solid var(--color-border-light);
+            margin-top: 12px;
         }
         .cta-warning:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+            background-color: #FFF5F5;
+            color: var(--color-wrong);
+            border-color: #FFD6D6;
         }
 
         .btn-secondary {
