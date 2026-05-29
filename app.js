@@ -578,6 +578,36 @@
             document.getElementById('split-modal-quiz-name').textContent = qn + ' (' + cnt + ' 题)';
             document.getElementById('split-start').max = cnt; document.getElementById('split-end').max = cnt;
             document.getElementById('split-start').value = ''; document.getElementById('split-end').value = '';
+
+            var spPrefix = 'PROGRESS_' + qn + '_' + qh + '_SPLIT_';
+            var lastSplit = null, lastTime = '';
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && k.indexOf(spPrefix) === 0) {
+                    try {
+                        var d = JSON.parse(localStorage.getItem(k));
+                        if (d && d.timestamp > lastTime) {
+                            lastTime = d.timestamp;
+                            var range = k.replace(spPrefix, '');
+                            var ansCnt = d.userAnswers ? d.userAnswers.filter(hasAnswered).length : 0;
+                            var totCnt = d.userAnswers ? d.userAnswers.length : 0;
+                            lastSplit = '上次拆分: ' + range + ' 题 (已答 ' + ansCnt + '/' + totCnt + ')';
+                        }
+                    } catch(e){}
+                }
+            }
+
+            var hintEl = document.getElementById('split-modal-hint');
+            if (!hintEl) {
+                hintEl = document.createElement('div');
+                hintEl.id = 'split-modal-hint';
+                hintEl.style.cssText = 'font-size:0.85em;color:var(--color-text-secondary);margin-bottom:12px;background:rgba(0,0,0,0.03);padding:8px;border-radius:8px;text-align:center;';
+                var nameEl = document.getElementById('split-modal-quiz-name');
+                nameEl.parentNode.insertBefore(hintEl, nameEl.nextSibling);
+            }
+            if (lastSplit) { hintEl.textContent = lastSplit; hintEl.style.display = 'block'; }
+            else { hintEl.style.display = 'none'; }
+
             document.getElementById('split-modal-overlay').style.display = 'flex';
         };
         window.closeSplitModal = function() { document.getElementById('split-modal-overlay').style.display = 'none'; };
@@ -836,39 +866,18 @@
 
         function saveHistory(answers, time) {
             if (!currentQuizName || !currentQuizHash) return;
-            var historyKey = 'HISTORY_' + currentQuizName + '_' + currentQuizHash;
+            var baseHash = currentQuizHash.split('_SPLIT_')[0];
+            var splitLabel = currentQuizHash.indexOf('_SPLIT_') !== -1 ? currentQuizHash.split('_SPLIT_')[1] : null;
+            var historyKey = 'HISTORY_' + currentQuizName + '_' + baseHash;
             var history = [];
-            try {
-                var savedHistory = localStorage.getItem(historyKey);
-                if (savedHistory) {
-                    history = JSON.parse(savedHistory);
-                }
-            } catch (e) { /* ignore */ }
-
+            try { var savedHistory = localStorage.getItem(historyKey); if (savedHistory) history = JSON.parse(savedHistory); } catch (e) {}
             var newRecord = {
-                userAnswers: answers,
-                seconds: time,
-                quizData: quizData.map(function(q) {
-                    return {
-                        id: q.id,
-                        originalIndex: q.originalIndex,
-                        question: q.question,
-                        answerKey: q.answerKey,
-                        options: q.options,
-                        type: q.type,
-                        analysis: q.analysis,
-                        shuffledOptions: q.shuffledOptions
-                    };
-                }),
+                userAnswers: answers, seconds: time, splitLabel: splitLabel,
+                quizData: quizData.map(function(q) { return { id: q.id, originalIndex: q.originalIndex, question: q.question, answerKey: q.answerKey, options: q.options, type: q.type, analysis: q.analysis, shuffledOptions: q.shuffledOptions }; }),
                 timestamp: new Date().toISOString()
             };
-
             history.unshift(newRecord);
-
-            if (history.length > HISTORY_LIMIT) {
-                history = history.slice(0, HISTORY_LIMIT);
-            }
-
+            if (history.length > HISTORY_LIMIT) history = history.slice(0, HISTORY_LIMIT);
             localStorage.setItem(historyKey, JSON.stringify(history));
         }
 
@@ -1161,9 +1170,11 @@
             var safeNameJs = escapeJsStr(quiz.name);
             var safeHashJs = escapeJsStr(quiz.hash);
 
+            var pk = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
+            var bestTotal = quiz.questionCount, bestAns = 0, bestKey = null;
+            try { var nd = JSON.parse(localStorage.getItem(pk)); if (nd) { bestTotal = nd.userAnswers ? nd.userAnswers.length : quiz.questionCount; bestAns = nd.userAnswers ? nd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = pk; } } catch(e) {}
             var startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
-            var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
-            if (localStorage.getItem(activeKey)) { startBtnText = '继续答题'; }
+            if (bestKey) { startBtnText = '继续答题'; }
 
             var splitBtn = quiz.questionCount > 50 ? '<button style="padding:12px 16px;font-size:0.95em;font-weight:600;border:none;border-radius:10px;background:#F5F5F7;color:var(--color-primary);cursor:pointer;flex-shrink:0;transition:all 0.2s;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
@@ -1256,25 +1267,24 @@
 
                         var safeNameJs2 = escapeJsStr(quiz.name);
                         var safeHashJs2 = escapeJsStr(quiz.hash);
+                        var splitTag = record.splitLabel ? '<span style="background:var(--color-background);border:1px solid var(--color-primary);color:var(--color-primary);padding:2px 6px;border-radius:6px;font-size:0.75em;margin-right:6px;font-weight:600;">拆分 ' + record.splitLabel + '</span>' : '';
                         var historyCard = document.createElement('div');
                         historyCard.className = 'history-card';
                         historyCard.innerHTML = '\
                             <button class="delete-history-btn" onclick="event.stopPropagation(); deleteHistoryRecord(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ', this)" title="删除此条记录">\
                                 <span class="material-icons">delete</span>\
                             </button>\
-                            <p style="margin: 0; font-size: 0.9em; padding-right: 35px;">\
-                                <strong>得分: <span style="color: ' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> \
-                                | 对/错: ' + correctCount + '/' + wrongCount + ' \
-                                | 用时: ' + timeStr + ' \
-                                <br>\
-                                <span style="font-size: 0.8em; color: #999;">' + dateStr + '</span>\
-                            </p>\
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">\
-                                <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ')" class="btn-secondary" style="background-color: var(--color-primary); color: white;">\
-                                    🔎 回顾错题\
+                            <div style="margin:0;font-size:0.9em;padding-right:30px;line-height:1.7;color:var(--color-text-main);">\
+                                <div style="margin-bottom:2px;">' + splitTag + '<strong>得分: <span style="font-size:1.05em;color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> <span style="color:var(--color-border-light);margin:0 6px;">|</span> 对/错: ' + correctCount + '/' + wrongCount + '</div>\
+                                <div style="color:var(--color-text-secondary);font-size:0.9em;">用时: ' + timeStr + '</div>\
+                                <div style="font-size:0.85em;color:#A0A0A5;margin-top:2px;">' + dateStr + '</div>\
+                            </div>\
+                            <div style="display:flex;gap:10px;margin-top:14px;">\
+                                <button onclick="reviewHistoricalQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:var(--color-primary);color:white;font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;">\
+                                    <span class="material-icons" style="font-size:18px;">manage_search</span> 回顾错题\
                                 </button>\
-                                <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\', \'' + safeHashJs2 + '\', ' + hIdx + ')" class="btn-secondary" style="background-color: var(--color-wrong); color: white;" ' + (wrongCount === 0 ? 'disabled' : '') + '>\
-                                    🔄 重做错题 (' + wrongCount + ')\
+                                <button onclick="startReviewWrongQuiz(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ')" style="flex:1;padding:10px 0;border:none;border-radius:10px;background:var(--color-wrong);color:white;font-size:0.9em;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity 0.2s;"' + (wrongCount === 0 ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') + '>\
+                                    <span class="material-icons" style="font-size:18px;">replay</span> 重做 (' + wrongCount + ')\
                                 </button>\
                             </div>\
                         ';
