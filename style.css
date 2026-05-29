@@ -898,12 +898,12 @@
             margin-top: 12px;
         }
         .auto-advance-row:hover {
-            border-color: var(--color-correct);
+            border-color: var(--color-accent-a);
             background-color: #F8FCF8;
         }
         .auto-advance-row.active {
-            border-color: var(--color-correct);
-            background-color: #E8F5E9;
+            border-color: var(--color-primary);
+            background-color: var(--color-background);
         }
         .auto-advance-row .auto-icon {
             font-size: 22px;
@@ -911,7 +911,7 @@
             color: var(--color-accent-a);
         }
         .auto-advance-row.active .auto-icon {
-            color: var(--color-correct);
+            color: var(--color-primary);
         }
         .auto-advance-row .auto-info {
             flex-grow: 1;
@@ -936,7 +936,7 @@
             flex-shrink: 0;
         }
         .auto-advance-row.active .toggle-track {
-            background-color: var(--color-correct);
+            background-color: var(--color-primary);
         }
         .auto-advance-row .toggle-thumb {
             width: 20px;

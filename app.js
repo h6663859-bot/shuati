@@ -462,10 +462,10 @@
 
         var THEME_COLORS = [
             { primary:'#C75B39', a:'#7A9A7E', b:'#E8A840' },
-            { primary:'#007AFF', a:'#5AC8FA', b:'#FF9500' },
-            { primary:'#34C759', a:'#30B0C7', b:'#FFCC00' },
-            { primary:'#FF2D55', a:'#AF52DE', b:'#FF9500' },
-            { primary:'#AF52DE', a:'#5856D6', b:'#FF2D55' }
+            { primary:'#C57353', a:'#8C7369', b:'#D89B7D' },
+            { primary:'#5E798F', a:'#8E9CA8', b:'#99ABC0' },
+            { primary:'#B56C78', a:'#C2959B', b:'#D4A3AB' },
+            { primary:'#5B7A61', a:'#859C88', b:'#A0B29F' }
         ];
         window.setTheme = function(idx) {
             var t = THEME_COLORS[idx];
@@ -1047,7 +1047,7 @@
             quizListContainer.innerHTML = '';
 
             if (quizList.length === 0) {
-                quizListContainer.innerHTML = '<p style="color: var(--color-text-secondary);">尚未导入任何题库。请点击下方按钮上传文件。</p>';
+                quizListContainer.innerHTML = '<p style="opacity:0;user-select:none;margin:0;padding:20px 0;">尚未导入任何题库。请点击下方按钮上传文件。</p>';
                 quizListCollapseBar.style.display = 'none';
                 quizListScrollWrapper.classList.remove('collapsed');
                 isQuizListCollapsed = false;
@@ -1114,7 +1114,7 @@
             if (lastScoreDisplay) lastScoreDisplay.textContent = '--';
 
             if (quizList.length === 0) {
-                historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">请先导入题库以查看统计和历史记录。</p>';
+                historyListContent.innerHTML = '<p style="opacity:0;user-select:none;margin:0;">请先导入题库以查看统计和历史记录。</p>';
                 return;
             }
 
@@ -1215,7 +1215,7 @@
             });
 
             if (!hasAnyHistory) {
-                historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">暂无历史记录。请先完成一次答题。</p>';
+                historyListContent.innerHTML = '<p style="opacity:0;user-select:none;margin:0;">暂无历史记录。请先完成一次答题。</p>';
             }
 
             var wrap = document.getElementById('global-stats-wrap');
