@@ -25,6 +25,7 @@
         let autoAdvanceTimer = null;
         let isWrongReinsert = false;
         var _wrongQueue = null;
+        let isCurrentCardHidden = false;
         // V17.0: 设置抽屉状态 & 题库列表折叠状态
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
@@ -400,6 +401,59 @@
                 if (lk && (lk.indexOf(p2) === 0 || lk === p1)) localStorage.removeItem(lk);
             }
             renderStatsPage();
+        };
+
+        window.openQuizPicker = function() {
+            var quizList = getQuizList();
+            var listContent = document.getElementById('picker-list-content');
+            listContent.innerHTML = '';
+
+            var hideItem = document.createElement('div');
+            hideItem.className = 'picker-item';
+            hideItem.style.background = '#FAFAFC';
+            hideItem.innerHTML = '<div class="picker-item-left"><span class="material-icons" style="color:var(--color-text-secondary);font-size:20px;">visibility_off</span><div class="picker-title" style="color:var(--color-text-secondary);font-weight:500;">隐藏首页题库卡片</div></div>';
+            hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
+            listContent.appendChild(hideItem);
+
+            quizList.forEach(function(quiz, index) {
+                var item = document.createElement('div');
+                item.className = 'picker-item';
+                var sNameJs = escapeJsStr(quiz.name);
+                var sHashJs = escapeJsStr(quiz.hash);
+                item.innerHTML = '<div class="picker-item-left"><span class="material-icons" style="color:var(--color-primary);font-size:20px;">description</span><div><div class="picker-title">' + escapeHtml(quiz.name) + '</div><div class="picker-meta">总题数: ' + quiz.questionCount + '</div></div></div><button class="picker-delete-btn" onclick="event.stopPropagation();deleteQuizFromPicker(\'' + sNameJs + '\',\'' + sHashJs + '\')"><span class="material-icons" style="font-size:18px;">delete</span></button>';
+                item.onclick = (function(idx) { return function() {
+                    var list = getQuizList();
+                    var target = list.splice(idx, 1)[0];
+                    list.unshift(target);
+                    localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
+                    isCurrentCardHidden = false;
+                    closeQuizPicker();
+                    renderHomePage();
+                }; })(index);
+                listContent.appendChild(item);
+            });
+
+            document.getElementById('picker-overlay').classList.add('visible');
+            document.getElementById('quiz-picker-drawer').classList.add('visible');
+        };
+
+        window.closeQuizPicker = function() {
+            document.getElementById('picker-overlay').classList.remove('visible');
+            document.getElementById('quiz-picker-drawer').classList.remove('visible');
+        };
+
+        window.deleteQuizFromPicker = function(name, hash) {
+            if (!confirm('确定删除题库\u300c' + name + '\u300d吗？')) return;
+            localStorage.removeItem('PROGRESS_' + name + '_' + hash);
+            localStorage.removeItem('HISTORY_' + name + '_' + hash);
+            var list = getQuizList();
+            if (list[0] && list[0].name === name && list[0].hash === hash) { isCurrentCardHidden = false; }
+            var target = list.find(function(q) { return q.name === name && q.hash === hash; });
+            if (target) { try { localStorage.removeItem(target.dataKey); } catch(e){} try { _idb.del(target.dataKey); } catch(e){} }
+            list = list.filter(function(q) { return !(q.name === name && q.hash === hash); });
+            localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
+            openQuizPicker();
+            renderHomePage();
         };
 
         // =========================================================
@@ -1044,67 +1098,49 @@
 
         function renderHomePage() {
             var quizList = getQuizList();
-            quizListContainer.innerHTML = '';
+            var container = document.getElementById('quiz-list-container');
+            var triggerBtn = document.getElementById('quiz-picker-trigger-btn');
+            var triggerText = document.getElementById('quiz-picker-trigger-text');
+            container.innerHTML = '';
 
             if (quizList.length === 0) {
-                quizListContainer.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无题库，请点击下方按钮导入</p>';
-                quizListCollapseBar.style.display = 'none';
-                quizListScrollWrapper.classList.remove('collapsed');
-                isQuizListCollapsed = false;
+                container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无题库，请点击下方按钮导入</p>';
+                if (triggerBtn) triggerBtn.style.display = 'none';
                 return;
             }
 
-            quizListCollapseBar.style.display = 'flex';
+            if (triggerBtn) triggerBtn.style.display = 'flex';
 
-            quizList.forEach(function(quiz) {
-                var safeName = escapeHtml(quiz.name);
-                var safeNameJs = escapeJsStr(quiz.name);
-                var safeHashJs = escapeJsStr(quiz.hash);
-
-                var bestTime = '', bestLabel = '', bestAns = 0, bestTotal = 0, bestKey = null;
-                try { var nd = JSON.parse(localStorage.getItem('PROGRESS_' + quiz.name + '_' + quiz.hash)); if (nd && nd.timestamp && nd.timestamp > bestTime) { bestTime = nd.timestamp; bestLabel = ''; bestTotal = nd.userAnswers ? nd.userAnswers.length : quiz.questionCount; bestAns = nd.userAnswers ? nd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash; } } catch(e) {}
-                var sp = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
-                for (var sk = 0; sk < localStorage.length; sk++) { var lk = localStorage.key(sk); if (lk && lk.indexOf(sp) === 0) { try { var sd = JSON.parse(localStorage.getItem(lk)); if (sd && sd.timestamp && sd.timestamp > bestTime) { bestTime = sd.timestamp; bestLabel = lk.replace(sp, ''); bestTotal = sd.userAnswers ? sd.userAnswers.length : 0; bestAns = sd.userAnswers ? sd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = lk; } } catch(e) {} } }
-
-                var startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
-                var badgeHtml = '<span class="status-badge badge-not-started">未开始</span>';
-                if (bestKey) {
-                    startBtnText = '继续答题';
-                    var displayProgress = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : '');
-                    badgeHtml = '<span class="status-badge badge-in-progress">' + displayProgress + '</span>';
-                    if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; }
-                }
-
-                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:#003153;color:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
-
-                var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
-                quizCard.innerHTML = '\
-                    <h4><span style="font-weight:700;">' + safeName + '</span><button class="delete-history-btn" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons">delete</span></button></h4>\
-                    <p style="margin-bottom:4px;">总题数: ' + quiz.questionCount + '</p>\
-                    <div>' + badgeHtml + '</div>\
-                    <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;margin-top:10px;">\
-                        <button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:#003153;color:#fff;cursor:pointer;flex-grow:1;display:inline-flex;align-items:center;justify-content:center;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
-                        ' + splitBtn + '\
-                    </div>\
-                ';
-                quizListContainer.appendChild(quizCard);
-            });
-
-            if (isQuizListCollapsed) {
-                quizListScrollWrapper.classList.add('collapsed');
-                quizListCollapseBar.style.borderTop = 'none'; quizListCollapseBar.style.paddingTop = '0';
-                quizListCollapseBtn.style.width = '100%'; quizListCollapseBtn.style.justifyContent = 'center';
-                quizListCollapseBtn.style.background = '#F0F4F8'; quizListCollapseBtn.style.padding = '14px'; quizListCollapseBtn.style.border = 'none'; quizListCollapseBtn.style.color = 'var(--color-primary)';
-                quizListCollapseBtn.innerHTML = '<span style="font-weight:bold;font-size:1.05em;">点击展开</span>';
-            } else {
-                quizListScrollWrapper.classList.remove('collapsed');
-                quizListCollapseBar.style.borderTop = '1px dashed var(--color-border-light)'; quizListCollapseBar.style.paddingTop = '10px';
-                quizListCollapseBtn.style.width = 'auto'; quizListCollapseBtn.style.justifyContent = 'center';
-                quizListCollapseBtn.style.background = '#fff'; quizListCollapseBtn.style.padding = '6px 16px'; quizListCollapseBtn.style.border = '1px solid var(--color-border-light)'; quizListCollapseBtn.style.color = 'var(--color-text-secondary)';
-                if (quizListCollapseText) { quizListCollapseText.textContent = '收起'; }
-                var icon = quizListCollapseBtn.querySelector('.material-icons');
-                if (icon) { icon.textContent = 'unfold_less'; }
+            if (isCurrentCardHidden) {
+                container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:16px 0;margin:0;font-size:0.9em;font-style:italic;">题库卡片已隐藏</p>';
+                if (triggerText) triggerText.textContent = '选择题库';
+                return;
             }
+
+            if (triggerText) triggerText.textContent = '切换题库';
+
+            var quiz = quizList[0];
+            var safeName = escapeHtml(quiz.name);
+            var safeNameJs = escapeJsStr(quiz.name);
+            var safeHashJs = escapeJsStr(quiz.hash);
+
+            var startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
+            var activeKey = 'PROGRESS_' + quiz.name + '_' + quiz.hash;
+            if (localStorage.getItem(activeKey)) { startBtnText = '继续答题'; }
+
+            var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:rgba(0,0,0,0.04);color:var(--color-text-main);cursor:pointer;flex-shrink:0;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+
+            var quizCard = document.createElement('div');
+            quizCard.style.cssText = 'margin-bottom:0;box-shadow:none;padding:8px 0;';
+            quizCard.innerHTML = '\
+                <h4 style="margin-bottom:6px;"><span style="font-weight:700;font-size:1.1em;">' + safeName + '</span></h4>\
+                <p style="margin:0 0 12px 0;color:var(--color-text-secondary);font-size:0.9em;">总题数: ' + quiz.questionCount + '</p>\
+                <div style="display:flex;gap:8px;align-items:stretch;">\
+                    <button style="padding:12px 15px;font-size:0.95em;font-weight:bold;border:none;border-radius:10px;background:var(--color-primary);color:#fff;cursor:pointer;flex-grow:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
+                    ' + splitBtn + '\
+                </div>\
+            ';
+            container.appendChild(quizCard);
         }
 
         // V20.0: 统计页面 — 按题库归类折叠（Accordion）

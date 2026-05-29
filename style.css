@@ -1259,3 +1259,13 @@
         }
         .badge-not-started { background-color: #EDF1F5; color: #607185; }
         .badge-in-progress { background-color: #E3EFF5; color: var(--color-primary); }
+
+        #picker-overlay.visible { opacity: 1; visibility: visible; }
+        #quiz-picker-drawer.visible { transform: translateY(0); }
+        .picker-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.04); cursor: pointer; transition: background 0.2s; }
+        .picker-item:active { background-color: #F5F5F7; }
+        .picker-item-left { display: flex; align-items: center; gap: 10px; flex-grow: 1; }
+        .picker-title { font-weight: 600; font-size: 0.95em; color: var(--color-text-main); }
+        .picker-meta { font-size: 0.75em; color: var(--color-text-secondary); margin-top: 2px; }
+        .picker-delete-btn { background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; }
+        .picker-delete-btn:hover { color: var(--color-wrong); }
