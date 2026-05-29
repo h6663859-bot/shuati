@@ -2,9 +2,9 @@
         /* I. 核心配色方案 (瓦松普鲁士) */
         /* ======================================= */
         :root {
-            --color-primary: #007AFF;
-            --color-accent-a: #34C759;
-            --color-accent-b: #FF9500;
+            --color-primary: #C75B39;
+            --color-accent-a: #7A9A7E;
+            --color-accent-b: #E8A840;
             --color-correct: #34C759;
             --color-wrong: #FF3B30;
             --color-background: #F5F5F7;

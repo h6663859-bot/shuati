@@ -354,7 +354,7 @@
                 bar.style.borderTop = 'none'; bar.style.paddingTop = '0';
                 btn.style.width = '100%'; btn.style.justifyContent = 'center';
                 btn.style.background = '#F0F4F8'; btn.style.padding = '14px'; btn.style.border = 'none'; btn.style.color = 'var(--color-primary)';
-                btn.innerHTML = '<span class="material-icons" style="margin-right:8px;font-size:22px;">folder_zip</span><span style="font-weight:bold;font-size:1.05em;">已折叠题库列表，点击展开</span>';
+                btn.innerHTML = '<span style="font-weight:bold;font-size:1.05em;">点击展开</span>';
             } else {
                 wrapper.classList.remove('collapsed');
                 bar.style.borderTop = '1px dashed var(--color-border-light)'; bar.style.paddingTop = '10px';
@@ -461,11 +461,11 @@
         };
 
         var THEME_COLORS = [
-            { primary:'#003153', a:'#6E8B74', b:'#FFC107' },
             { primary:'#C75B39', a:'#7A9A7E', b:'#E8A840' },
-            { primary:'#2E5A3E', a:'#6B8C7C', b:'#D4A840' },
-            { primary:'#4A3A6E', a:'#8B7E9E', b:'#E0B860' },
-            { primary:'#3A4048', a:'#6E8B74', b:'#C8A040' }
+            { primary:'#007AFF', a:'#5AC8FA', b:'#FF9500' },
+            { primary:'#34C759', a:'#30B0C7', b:'#FFCC00' },
+            { primary:'#FF2D55', a:'#AF52DE', b:'#FF9500' },
+            { primary:'#AF52DE', a:'#5856D6', b:'#FF2D55' }
         ];
         window.setTheme = function(idx) {
             var t = THEME_COLORS[idx];
@@ -1095,7 +1095,7 @@
                 quizListCollapseBar.style.borderTop = 'none'; quizListCollapseBar.style.paddingTop = '0';
                 quizListCollapseBtn.style.width = '100%'; quizListCollapseBtn.style.justifyContent = 'center';
                 quizListCollapseBtn.style.background = '#F0F4F8'; quizListCollapseBtn.style.padding = '14px'; quizListCollapseBtn.style.border = 'none'; quizListCollapseBtn.style.color = 'var(--color-primary)';
-                quizListCollapseBtn.innerHTML = '<span class="material-icons" style="margin-right:8px;font-size:22px;">folder_zip</span><span style="font-weight:bold;font-size:1.05em;">已折叠 ' + quizList.length + ' 个题库，点击展开</span>';
+                quizListCollapseBtn.innerHTML = '<span style="font-weight:bold;font-size:1.05em;">点击展开</span>';
             } else {
                 quizListScrollWrapper.classList.remove('collapsed');
                 quizListCollapseBar.style.borderTop = '1px dashed var(--color-border-light)'; quizListCollapseBar.style.paddingTop = '10px';
