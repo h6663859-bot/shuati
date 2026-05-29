@@ -617,13 +617,10 @@
             }
         }
 
-        window.startQuiz = function(quizName) {
+        window.startQuiz = function(quizName, overrideHash) {
             clearAutoAdvanceTimer();
 
-            // V17.0: 关闭抽屉再进入刷题
-            if (isDrawerOpen) {
-                toggleSettingsDrawer();
-            }
+            if (isDrawerOpen) { toggleSettingsDrawer(); }
 
             var modeNormal = document.getElementById('mode-normal');
             isMemorizeMode = modeNormal ? !modeNormal.checked : false;
@@ -631,13 +628,10 @@
             var quizList = getQuizList();
             var targetQuiz = quizList.find(function(q) { return q.name === quizName; });
 
-            if (!targetQuiz) {
-                alert("找不到该题库，请重新导入。");
-                return;
-            }
+            if (!targetQuiz) { alert("找不到该题库，请重新导入。"); return; }
 
             currentQuizName = quizName;
-            currentQuizHash = targetQuiz.hash;
+            currentQuizHash = overrideHash || targetQuiz.hash;
             currentQuestionIndex = 0;
 
             var rawText = localStorage.getItem(targetQuiz.dataKey);
@@ -1056,13 +1050,13 @@
                 for (var sk = 0; sk < localStorage.length; sk++) { var lk = localStorage.key(sk); if (lk && lk.indexOf(sp) === 0) { try { var sd = JSON.parse(localStorage.getItem(lk)); if (sd && sd.timestamp && sd.timestamp > bestTime) { bestTime = sd.timestamp; bestLabel = lk.replace(sp, ''); bestTotal = sd.userAnswers ? sd.userAnswers.length : 0; bestAns = sd.userAnswers ? sd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = lk; } } catch(e) {} } }
 
                 var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
-                if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\')'; } }
+                if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; } }
 
                 var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
-                    <h4><span style="font-weight:700;">' + safeName + '</span><button class="btn-secondary" style="background-color:transparent;" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons" style="font-size:18px;color:var(--color-text-secondary);">delete</span></button></h4>\
+                    <h4><span style="font-weight:700;">' + safeName + '</span><button class="delete-history-btn" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons">delete</span></button></h4>\
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style:italic;">' + progressText + '</p>\
                     <div class="quiz-actions" style="display:flex;gap:8px;">\
@@ -1090,6 +1084,7 @@
 
         // V20.0: 统计页面 — 按题库归类折叠（Accordion）
         function renderStatsPage() {
+            try {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
             lastScoreDisplay.textContent = '--';
@@ -1205,6 +1200,7 @@
             var items = [{v:quizList.length,l:'题库'},{v:globalTotalQuestions,l:'题目'},{v:globalAnswered,l:'已答'}];
             for(var gi=0;gi<3;gi++){ var it=document.createElement('div'); it.style.cssText='flex:1 1 0;min-width:80px;background:var(--color-card-bg);border-radius:8px;padding:12px 8px;text-align:center;border:1px solid var(--color-border-light);'; it.innerHTML='<div style=\"font-size:1.4em;font-weight:700;color:var(--color-primary);\">'+items[gi].v+'</div><div style=\"font-size:0.75em;color:var(--color-text-secondary);\">'+items[gi].l+'</div>'; gsDiv.appendChild(it); }
             wrap.parentNode.replaceChild(gsDiv, wrap);
+            } catch(e) { showToast('统计加载异常，请刷新重试', 'error'); }
         }
 
         // V20.0: 静默刷新全局统计数据（不重绘整个页面）
