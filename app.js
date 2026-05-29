@@ -1047,7 +1047,7 @@
             quizListContainer.innerHTML = '';
 
             if (quizList.length === 0) {
-                quizListContainer.innerHTML = '<p style="opacity:0;user-select:none;margin:0;padding:20px 0;">尚未导入任何题库。请点击下方按钮上传文件。</p>';
+                quizListContainer.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无题库，请点击下方按钮导入</p>';
                 quizListCollapseBar.style.display = 'none';
                 quizListScrollWrapper.classList.remove('collapsed');
                 isQuizListCollapsed = false;
@@ -1114,7 +1114,7 @@
             if (lastScoreDisplay) lastScoreDisplay.textContent = '--';
 
             if (quizList.length === 0) {
-                historyListContent.innerHTML = '<p style="opacity:0;user-select:none;margin:0;">请先导入题库以查看统计和历史记录。</p>';
+                historyListContent.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">请先导入题库以查看统计和历史记录。</p>';
                 return;
             }
 
@@ -1215,7 +1215,7 @@
             });
 
             if (!hasAnyHistory) {
-                historyListContent.innerHTML = '<p style="opacity:0;user-select:none;margin:0;">暂无历史记录。请先完成一次答题。</p>';
+                historyListContent.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无历史记录。请先完成一次答题。</p>';
             }
 
             var wrap = document.getElementById('global-stats-wrap');
