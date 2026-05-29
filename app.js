@@ -648,18 +648,18 @@
                 showLoading('正在加载题库...');
                 _idb.get(targetQuiz.dataKey).then(function(data){
                     hideLoading();
-                    if (data) _startQuizWithRawText(quizName, targetQuiz, data);
+                    if (data) _startQuizWithRawText(quizName, targetQuiz, data, currentQuizHash);
                     else alert("错误：未能加载题库原始数据。");
                 }).catch(function(){ hideLoading(); alert("错误：未能加载题库原始数据。"); });
                 return;
             }
 
-            _startQuizWithRawText(quizName, targetQuiz, rawText);
+            _startQuizWithRawText(quizName, targetQuiz, rawText, currentQuizHash);
         };
 
-        function _startQuizWithRawText(quizName, targetQuiz, rawText) {
+        function _startQuizWithRawText(quizName, targetQuiz, rawText, actualHash) {
             currentQuizName = quizName;
-            currentQuizHash = targetQuiz.hash;
+            currentQuizHash = actualHash || targetQuiz.hash;
             currentQuestionIndex = 0;
 
             var loadedProgress = false;
