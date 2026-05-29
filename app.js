@@ -364,9 +364,10 @@
             var accordion = header.parentElement;
             var body = accordion.querySelector('.stats-accordion-body');
             if (accordion.classList.contains('open')) {
-                body.style.maxHeight = (body.scrollHeight + 20) + 'px';
+                accordion.classList.remove('open');
+                body.style.maxHeight = body.scrollHeight + 'px';
                 requestAnimationFrame(function(){ body.style.maxHeight = '0px'; });
-                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); accordion.classList.remove('open'); body.style.maxHeight = ''; });
+                body.addEventListener('transitionend', function h(){ body.removeEventListener('transitionend',h); body.style.maxHeight = ''; });
             } else {
                 accordion.classList.add('open');
                 body.style.maxHeight = (body.scrollHeight + 20) + 'px';
@@ -1037,7 +1038,7 @@
                 return;
             }
 
-            quizListCollapseBar.style.display = 'block';
+            quizListCollapseBar.style.display = 'flex';
 
             quizList.forEach(function(quiz) {
                 var safeName = escapeHtml(quiz.name);
@@ -1052,7 +1053,7 @@
                 var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
                 if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; } }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button class="btn-secondary" style="padding:10px 15px;font-size:0.9em;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 12px;font-size:0.85em;font-weight:bold;border:none;border-radius:8px;background:var(--color-primary);color:var(--color-card-bg);cursor:pointer;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\

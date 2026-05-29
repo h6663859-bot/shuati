@@ -42,15 +42,15 @@
             padding: 15px 20px;
             padding-top: calc(15px + env(safe-area-inset-top, 0px));
             z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: block;
             height: 40px;
         }
         #top-header h1 {
             margin: 0;
-            text-align: center;
-            width: 100%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
             font-size: 1.2em;
             font-weight: 600;
             color: var(--color-primary);
