@@ -2,20 +2,19 @@
         /* I. 核心配色方案 (瓦松普鲁士) */
         /* ======================================= */
         :root {
-            --color-primary: #003153;
-            --color-accent-a: #6E8B74;
-            --color-accent-b: #FFC107;
-            --color-correct: #4CAF50;
-            --color-wrong: #F44336;
-            --color-background: #F4F7FA;
+            --color-primary: #007AFF;
+            --color-accent-a: #34C759;
+            --color-accent-b: #FF9500;
+            --color-correct: #34C759;
+            --color-wrong: #FF3B30;
+            --color-background: #F5F5F7;
             --color-card-bg: #FFFFFF;
-            --color-text-main: #333333;
-            --color-text-secondary: #666666;
-            --color-border-light: rgba(0, 0, 0, 0.04);
-            --border-radius-card: 16px;
-            --border-radius-button: 10px;
-            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.03);
-            --shadow-header: 0 2px 12px rgba(0, 0, 0, 0.02);
+            --color-text-main: #1D1D1F;
+            --color-text-secondary: #86868B;
+            --color-border-light: rgba(0, 0, 0, 0.05);
+            --border-radius-card: 18px;
+            --border-radius-button: 12px;
+            --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.04);
         }
 
         body {
@@ -520,11 +519,11 @@
             touch-action: pan-y;
         }
         .question-title {
-            font-size: 1.1em;
             font-weight: 600;
-            margin-bottom: 8px;
-            padding-bottom: 5px;
-            border-bottom: 1px dashed var(--color-border-light);
+            font-size: 1.15em;
+            line-height: 1.4;
+            border-bottom: none !important;
+            padding-bottom: 8px;
         }
         @media (max-width: 768px) {
             .question-container { padding: 2px 0 0; }
