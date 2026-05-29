@@ -1104,19 +1104,24 @@
             container.innerHTML = '';
 
             if (quizList.length === 0) {
-                container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:20px 0;margin:0;">暂无题库，请点击下方按钮导入</p>';
+                container.innerHTML = '<div style="text-align:center;padding:30px 0;">\
+                    <span class="material-icons" style="font-size:48px;color:#CCC;display:block;margin-bottom:12px;">menu_book</span>\
+                    <p style="color:var(--color-text-secondary);margin:0;">暂无题库，点击下方导入</p>\
+                </div>';
                 if (triggerBtn) triggerBtn.style.display = 'none';
                 return;
             }
 
-            if (triggerBtn) triggerBtn.style.display = 'flex';
-
             if (isCurrentCardHidden) {
                 container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:16px 0;margin:0;font-size:0.9em;font-style:italic;">题库卡片已隐藏</p>';
-                if (triggerText) triggerText.textContent = '选择题库';
+                if (triggerText) triggerText.textContent = '点击选择题库';
+                if (triggerBtn) triggerBtn.style.display = 'flex';
                 return;
             }
 
+            if (triggerBtn) {
+                triggerBtn.style.display = quizList.length > 1 ? 'flex' : 'none';
+            }
             if (triggerText) triggerText.textContent = '切换题库';
 
             var quiz = quizList[0];
@@ -1828,10 +1833,10 @@
             drawerOverlay.classList.remove('visible');
             document.body.style.overflow = '';
 
-            // V17.0: 题库列表折叠初始状态
+            // V26.0: 安全处理旧版折叠逻辑，防止 null 报错阻断脚本执行
             isQuizListCollapsed = false;
-            quizListScrollWrapper.classList.remove('collapsed');
-            quizListCollapseText.textContent = '收起';
+            if (quizListScrollWrapper) quizListScrollWrapper.classList.remove('collapsed');
+            if (quizListCollapseText) quizListCollapseText.textContent = '收起';
 
             // V20.1: localStorage 可用性检测
             try {
