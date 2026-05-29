@@ -25,8 +25,8 @@
         let autoAdvanceTimer = null;
         let isWrongReinsert = false;
         var _wrongQueue = null;
-        let isCurrentCardHidden = false;
-        let isHistoryHidden = false;
+        var isCurrentCardHidden = localStorage.getItem('PREF_isCurrentCardHidden') === 'true';
+        var isHistoryHidden = localStorage.getItem('PREF_isHistoryHidden') === 'true';
         // V17.0: 设置抽屉状态 & 题库列表折叠状态
         let isDrawerOpen = false;
         let isQuizListCollapsed = false;
@@ -436,10 +436,10 @@
             hideItem.style.background = '#FAFAFC';
             if (typeof appState !== 'undefined' && appState === 'Stats') {
                 hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u5386\u53f2\u8bb0\u5f55</div></div>';
-                hideItem.onclick = function() { isHistoryHidden = true; closeQuizPicker(); renderStatsPage(); };
+                hideItem.onclick = function() { isHistoryHidden = true; localStorage.setItem('PREF_isHistoryHidden','true'); closeQuizPicker(); renderStatsPage(); };
             } else {
                 hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9898\u5e93</div></div>';
-                hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
+                hideItem.onclick = function() { isCurrentCardHidden = true; localStorage.setItem('PREF_isCurrentCardHidden','true'); closeQuizPicker(); renderHomePage(); };
             }
             listContent.appendChild(hideItem);
 
@@ -460,8 +460,8 @@
                     }
                     localStorage.setItem(QUIZ_LIST_KEY, JSON.stringify(list));
                     closeQuizPicker();
-                    if (appState === 'Home') { isCurrentCardHidden = false; renderHomePage(); }
-                    else if (appState === 'Stats') { isHistoryHidden = false; renderStatsPage(); }
+                    if (appState === 'Home') { isCurrentCardHidden = false; localStorage.setItem('PREF_isCurrentCardHidden','false'); renderHomePage(); }
+                    else if (appState === 'Stats') { isHistoryHidden = false; localStorage.setItem('PREF_isHistoryHidden','false'); renderStatsPage(); }
                 };
                 listContent.appendChild(item);
             });
