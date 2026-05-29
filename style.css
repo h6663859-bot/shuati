@@ -1269,3 +1269,12 @@
         .picker-meta { font-size: 0.75em; color: var(--color-text-secondary); margin-top: 2px; }
         .picker-delete-btn { background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; }
         .picker-delete-btn:hover { color: var(--color-wrong); }
+
+        .header-delete-btn {
+            border: none; background: rgba(0, 0, 0, 0.04); color: var(--color-text-secondary);
+            cursor: pointer; padding: 6px; border-radius: 10px;
+            display: inline-flex; align-items: center;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .header-delete-btn:hover, .header-delete-btn:active { background: #FFF5F5; color: var(--color-wrong); }
+        .header-delete-btn:active { transform: scale(0.92); }
