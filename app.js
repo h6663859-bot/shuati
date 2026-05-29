@@ -1053,7 +1053,7 @@
                 var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
                 if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; } }
 
-                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 12px;font-size:0.85em;font-weight:bold;border:none;border-radius:8px;background:var(--color-primary);color:var(--color-card-bg);cursor:pointer;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
+                var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:var(--color-primary);color:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
@@ -1061,7 +1061,7 @@
                     <p>总题数: ' + quiz.questionCount + '</p>\
                     <p style="font-style:italic;">' + progressText + '</p>\
                     <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;"\
-                        <button class="cta-btn cta-primary" style="padding:12px 18px;font-size:0.95em;flex-grow:1;color:#fff;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:20px;margin-right:8px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
+                        <button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:var(--color-primary);color:#fff;cursor:pointer;flex-grow:1;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;">play_arrow</span>' + startBtnText + '</button>\
                         ' + splitBtn + '\
                     </div>\
                 ';
