@@ -433,7 +433,7 @@
             var hideItem = document.createElement('div');
             hideItem.className = 'picker-item';
             hideItem.style.background = '#FAFAFC';
-            hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9996\u9875\u9898\u5e93\u5361\u7247</div></div>';
+            hideItem.innerHTML = '<div class=\"picker-item-left\"><span class=\"material-icons\" style=\"color:var(--color-text-secondary);font-size:20px;\">visibility_off</span><div class=\"picker-title\" style=\"color:var(--color-text-secondary);font-weight:500;\">\u9690\u85cf\u9898\u5e93</div></div>';
             hideItem.onclick = function() { isCurrentCardHidden = true; closeQuizPicker(); renderHomePage(); };
             listContent.appendChild(hideItem);
 
@@ -1145,8 +1145,8 @@
             }
 
             if (isCurrentCardHidden) {
-                container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:16px 0;margin:0;font-size:0.9em;font-style:italic;">题库卡片已隐藏</p>';
-                if (triggerText) triggerText.textContent = '点击选择题库';
+                container.innerHTML = '<p style="color:var(--color-text-secondary);text-align:center;padding:16px 0;margin:0;font-size:0.9em;font-style:italic;">题库隐藏</p>';
+                if (triggerText) triggerText.textContent = '选择题库';
                 if (triggerBtn) triggerBtn.style.display = 'flex';
                 return;
             }
