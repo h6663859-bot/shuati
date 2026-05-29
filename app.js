@@ -1066,17 +1066,23 @@
                 var sp = 'PROGRESS_' + quiz.name + '_' + quiz.hash + '_SPLIT_';
                 for (var sk = 0; sk < localStorage.length; sk++) { var lk = localStorage.key(sk); if (lk && lk.indexOf(sp) === 0) { try { var sd = JSON.parse(localStorage.getItem(lk)); if (sd && sd.timestamp && sd.timestamp > bestTime) { bestTime = sd.timestamp; bestLabel = lk.replace(sp, ''); bestTotal = sd.userAnswers ? sd.userAnswers.length : 0; bestAns = sd.userAnswers ? sd.userAnswers.filter(function(a){return hasAnswered(a);}).length : 0; bestKey = lk; } } catch(e) {} } }
 
-                var progressText = '未开始', startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
-                if (bestKey) { progressText = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : ''); startBtnText = '继续答题'; if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; } }
+                var startBtnText = '开始答题', startOnclick = 'startQuiz(\'' + safeNameJs + '\')';
+                var badgeHtml = '<span class="status-badge badge-not-started">未开始</span>';
+                if (bestKey) {
+                    startBtnText = '继续答题';
+                    var displayProgress = '已答 ' + bestAns + '/' + bestTotal + (bestLabel ? ' (拆分' + bestLabel + ')' : '');
+                    badgeHtml = '<span class="status-badge badge-in-progress">' + displayProgress + '</span>';
+                    if (bestLabel) { var sh = escapeJsStr(quiz.hash + '_SPLIT_' + bestLabel); startOnclick = 'startQuiz(\'' + safeNameJs + '\',\'' + sh + '\')'; }
+                }
 
                 var splitBtn = quiz.questionCount > 50 ? '<button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:#003153;color:#fff;cursor:pointer;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="showSplitModal(\'' + safeNameJs + '\',\'' + safeHashJs + '\',' + quiz.questionCount + ')">拆分</button>' : '';
 
                 var quizCard = document.createElement('div'); quizCard.className = 'quiz-card-item';
                 quizCard.innerHTML = '\
                     <h4><span style="font-weight:700;">' + safeName + '</span><button class="delete-history-btn" onclick="deleteQuiz(\'' + safeNameJs + '\',\'' + safeHashJs + '\')"><span class="material-icons">delete</span></button></h4>\
-                    <p>总题数: ' + quiz.questionCount + '</p>\
-                    <p style="font-style:italic;">' + progressText + '</p>\
-                    <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;">\
+                    <p style="margin-bottom:4px;">总题数: ' + quiz.questionCount + '</p>\
+                    <div>' + badgeHtml + '</div>\
+                    <div class="quiz-actions" style="display:flex;gap:8px;align-items:stretch;margin-top:10px;">\
                         <button style="padding:10px 15px;font-size:0.9em;font-weight:bold;border:none;border-radius:8px;background:#003153;color:#fff;cursor:pointer;flex-grow:1;display:inline-flex;align-items:center;justify-content:center;" onclick="' + startOnclick + '"><span class="material-icons" style="font-size:18px;margin-right:5px;color:#fff;">play_arrow</span>' + startBtnText + '</button>\
                         ' + splitBtn + '\
                     </div>\
