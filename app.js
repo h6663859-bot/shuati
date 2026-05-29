@@ -1094,7 +1094,7 @@
         function renderStatsPage() {
             var quizList = getQuizList();
             historyListContent.innerHTML = '';
-            lastScoreDisplay.textContent = '--';
+            if (lastScoreDisplay) lastScoreDisplay.textContent = '--';
 
             if (quizList.length === 0) {
                 historyListContent.innerHTML = '<p style="color: var(--color-text-secondary);">请先导入题库以查看统计和历史记录。</p>';
@@ -1135,7 +1135,9 @@
                     var header = document.createElement('div');
                     header.className = 'stats-accordion-header';
                     header.onclick = function() { toggleAccordion(this); };
-                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span>';
+                    var safeNameJs2 = escapeJsStr(quiz.name);
+                    var safeHashJs2 = escapeJsStr(quiz.hash);
+                    header.innerHTML = '<span class="material-icons accordion-icon">chevron_right</span><span class="accordion-title">' + escapeHtml(quiz.name) + '</span><span class="accordion-badge">最近 ' + history.length + ' 次</span><button class="stats-clear-btn" onclick="event.stopPropagation();clearQuizStats(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\')" title="清空该题库记录"><span class="material-icons" style="font-size:16px;">delete</span></button>';
 
                     // 折叠卡片内容区
                     var body = document.createElement('div');
@@ -1157,8 +1159,7 @@
                         var timeStr = new Date(record.seconds * 1000).toISOString().substr(11, 8);
                         var dateStr = new Date(record.timestamp).toLocaleString();
 
-                        // 第一个题库的第一条记录作为"上次测试得分"
-                        if (quizIdx === 0 && hIdx === 0) {
+                        if (quizIdx === 0 && hIdx === 0 && lastScoreDisplay) {
                             lastScoreDisplay.innerHTML = score + '分 (用时 ' + timeStr + ')';
                             lastScoreDisplay.style.color = score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
                         }
@@ -1250,13 +1251,15 @@
                     r.quizData.forEach(function(q, idx) { if (checkAnswer(q, r.userAnswers[idx])) correct++; });
                     var sc = ((correct / total) * 100).toFixed(1);
                     var ts = new Date(r.seconds * 1000).toISOString().substr(11, 8);
-                    lastScoreDisplay.innerHTML = sc + '分 (用时 ' + ts + ')';
-                    lastScoreDisplay.style.color = sc >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
+                    if (lastScoreDisplay) {
+                        lastScoreDisplay.innerHTML = sc + '分 (用时 ' + ts + ')';
+                        lastScoreDisplay.style.color = sc >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)';
+                    }
                     hasHistory = true;
                     break;
                 }
             }
-            if (!hasHistory) {
+            if (!hasHistory && lastScoreDisplay) {
                 lastScoreDisplay.textContent = '--';
                 lastScoreDisplay.style.color = 'var(--color-primary)';
             }
