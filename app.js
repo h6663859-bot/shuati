@@ -819,7 +819,16 @@
                 if (isShuffleQuestions) quizData = shuffleArray(quizData);
                 if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
                 else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
-            } else { loadedProgress = true; }
+            } else {
+                loadedProgress = true;
+                if (userAnswers && userAnswers.length > 0) {
+                    var lastAnsIdx = 0;
+                    for (var ai = 0; ai < userAnswers.length; ai++) {
+                        if (hasAnswered(userAnswers[ai])) lastAnsIdx = ai;
+                    }
+                    currentQuestionIndex = lastAnsIdx;
+                }
+            }
 
             isExamFinished = false;
             _wrongQueue = null;
