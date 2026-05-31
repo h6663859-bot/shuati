@@ -592,7 +592,7 @@
             document.getElementById('split-start').value = ''; document.getElementById('split-end').value = '';
 
             var spPrefix = 'PROGRESS_' + qn + '_' + qh + '_SPLIT_';
-            var lastSplit = null, lastTime = '';
+            var lastSplit = null, lastTime = '', lastRange = '';
             for (var i = 0; i < localStorage.length; i++) {
                 var k = localStorage.key(i);
                 if (k && k.indexOf(spPrefix) === 0) {
@@ -600,10 +600,10 @@
                         var d = JSON.parse(localStorage.getItem(k));
                         if (d && d.timestamp > lastTime) {
                             lastTime = d.timestamp;
-                            var range = k.replace(spPrefix, '');
+                            lastRange = k.replace(spPrefix, '');
                             var ansCnt = d.userAnswers ? d.userAnswers.filter(hasAnswered).length : 0;
                             var totCnt = d.userAnswers ? d.userAnswers.length : 0;
-                            lastSplit = '上次拆分: ' + range + ' 题 (已答 ' + ansCnt + '/' + totCnt + ')';
+                            lastSplit = '上次拆分: ' + lastRange + ' 题 (已答 ' + ansCnt + '/' + totCnt + ')';
                         }
                     } catch(e){}
                 }
@@ -617,12 +617,22 @@
                 var nameEl = document.getElementById('split-modal-quiz-name');
                 nameEl.parentNode.insertBefore(hintEl, nameEl.nextSibling);
             }
-            if (lastSplit) { hintEl.textContent = lastSplit; hintEl.style.display = 'block'; }
-            else { hintEl.style.display = 'none'; }
+            if (lastSplit) {
+                hintEl.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><span>' + lastSplit + '</span><button onclick="resumeSplitQuiz(\'' + lastRange + '\')" style="padding:6px 14px;border:none;border-radius:8px;background:var(--color-primary);color:#fff;font-size:0.9em;font-weight:bold;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);">继续</button></div>';
+                hintEl.style.display = 'block';
+            } else { hintEl.style.display = 'none'; }
 
             document.getElementById('split-modal-overlay').style.display = 'flex';
         };
         window.closeSplitModal = function() { document.getElementById('split-modal-overlay').style.display = 'none'; };
+        window.resumeSplitQuiz = function(rangeStr) {
+            var parts = rangeStr.split('-');
+            if (parts.length === 2) {
+                document.getElementById('split-start').value = parts[0];
+                document.getElementById('split-end').value = parts[1];
+                document.getElementById('split-end').closest('div').querySelector('button.btn-secondary').click();
+            }
+        };
         window.startSplitQuiz = function() {
             var ql = getQuizList();
             var tq = ql.find(function(q){return q.name===_splitQuizName&&q.hash===_splitQuizHash;});

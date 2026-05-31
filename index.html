@@ -163,14 +163,14 @@
             </section>
 
             <section id="quiz-area" style="display: none;">
-                <div id="quiz-header">
-                     <div id="quiz-info-bar">
-                         <h2 id="current-quiz-display"></h2>
-                         <div id="timer">用时：<span id="time-display">00:00:00</span></div>
+                <div id="quiz-header" style="display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:12px; border-bottom:1px solid var(--color-border-light); margin-bottom:15px;">
+                     <div style="display:flex; flex-direction:column; gap:4px; max-width:60%;">
+                         <h2 id="current-quiz-display" style="margin:0; font-size:1.1em; color:var(--color-text-main); line-height:1.4;"></h2>
+                         <div id="timer" style="font-size:0.9em; color:var(--color-text-secondary);">用时：<span id="time-display">00:00:00</span></div>
                      </div>
-                     <div style="display: flex; gap: 10px; align-items: center;">
-                         <button id="submit-btn" style="display: none;" onclick="handleSubmit()">交卷</button>
-                         <button id="card-toggle-btn" class="btn-secondary" onclick="toggleAnswerCard()">答题卡 (0/0)</button>
+                     <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+                         <button id="submit-btn" style="display:none; padding:8px 12px; background:#F5F5F7; border:none; border-radius:8px; color:var(--color-primary); font-weight:600; cursor:pointer;" onclick="handleSubmit()">交卷</button>
+                         <button id="card-toggle-btn" style="padding:8px 12px; background:rgba(0,0,0,0.04); border:none; border-radius:8px; color:var(--color-text-main); font-weight:600; cursor:pointer;" onclick="toggleAnswerCard()">答题卡 (0/0)</button>
                      </div>
                 </div>
 
