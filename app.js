@@ -315,6 +315,16 @@
             return Array.isArray(answer) ? answer.length > 0 : answer !== null;
         }
 
+        window.autoLocateProgress = function() {
+            if (!userAnswers || userAnswers.length === 0) return;
+            var targetIdx = 0, allAnswered = true;
+            for (var i = 0; i < userAnswers.length; i++) {
+                if (!hasAnswered(userAnswers[i])) { targetIdx = i; allAnswered = false; break; }
+            }
+            if (allAnswered) targetIdx = userAnswers.length - 1;
+            currentQuestionIndex = targetIdx;
+        };
+
         /**
          * 为题目数组中的每道题生成 shuffledOptions（基于原始 options 的乱序副本）。
          */
@@ -650,6 +660,7 @@
                 var sp = localStorage.getItem(pk);
                 if(sp){try{var dp=JSON.parse(sp);quizData=dp.quizData;userAnswers=dp.userAnswers;seconds=dp.seconds||0;}catch(e){}}
                 else { quizData=sl; if(isShuffleQuestions)quizData=shuffleArray(quizData); if(isShuffleOptions)quizData=initializeQuestionOptions(quizData); else quizData.forEach(function(q){if(!q.shuffledOptions)q.shuffledOptions=q.options.slice();}); userAnswers=new Array(quizData.length).fill(null).map(function(_,i){return quizData[i].type.indexOf('多选')!==-1?[]:null;}); seconds=0; }
+                if (window.autoLocateProgress) window.autoLocateProgress();
                 isExamFinished=false; _wrongQueue=null;
                 if(isMemorizeMode&&isWrongReinsert){_wrongQueue=[];for(var qi=0;qi<quizData.length;qi++)_wrongQueue.push(qi);}
                 if(isDrawerOpen)toggleSettingsDrawer(); setAppState('Quiz');
@@ -819,16 +830,8 @@
                 if (isShuffleQuestions) quizData = shuffleArray(quizData);
                 if (isShuffleOptions) quizData = initializeQuestionOptions(quizData);
                 else quizData.forEach(function(q) { if (!q.shuffledOptions) q.shuffledOptions = q.options.slice(); });
-            } else {
-                loadedProgress = true;
-                if (userAnswers && userAnswers.length > 0) {
-                    var lastAnsIdx = 0;
-                    for (var ai = 0; ai < userAnswers.length; ai++) {
-                        if (hasAnswered(userAnswers[ai])) lastAnsIdx = ai;
-                    }
-                    currentQuestionIndex = lastAnsIdx;
-                }
-            }
+            } else { loadedProgress = true; }
+            if (window.autoLocateProgress) window.autoLocateProgress();
 
             isExamFinished = false;
             _wrongQueue = null;
