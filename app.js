@@ -36,17 +36,17 @@
         const SETTINGS_KEY = 'SETTINGS_V20';
 
         const timeDisplay = document.getElementById('time-display');
-        const submitBtn = document.getElementById('submit-btn');
+        const submitBtn = document.getElementById('submit-quiz-btn');
         const homePage = document.getElementById('home-page');
         const quizArea = document.getElementById('quiz-area');
         const statsPage = document.getElementById('stats-page');
-        const currentQuizDisplay = document.getElementById('current-quiz-display');
+        const currentQuizDisplay = document.getElementById('quiz-title');
         const quizListContainer = document.getElementById('quiz-list-container');
         const questionDisplayArea = document.getElementById('question-display-area');
         const cardGrid = document.getElementById('card-grid');
         const answerCardArea = document.getElementById('answer-card-area');
         const resultSummaryDiv = document.getElementById('exam-result-summary');
-        const cardToggleButton = document.getElementById('card-toggle-btn');
+        const cardToggleButton = document.getElementById('answer-sheet-btn');
         const bottomNav = document.getElementById('bottom-nav');
         const lastScoreDisplay = document.getElementById('last-score');
         const historyListContent = document.getElementById('history-list-content');
