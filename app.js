@@ -317,12 +317,11 @@
 
         window.autoLocateProgress = function() {
             if (!userAnswers || userAnswers.length === 0) return;
-            var targetIdx = 0, allAnswered = true;
+            var lastAnsweredIdx = 0;
             for (var i = 0; i < userAnswers.length; i++) {
-                if (!hasAnswered(userAnswers[i])) { targetIdx = i; allAnswered = false; break; }
+                if (hasAnswered(userAnswers[i])) lastAnsweredIdx = i;
             }
-            if (allAnswered) targetIdx = userAnswers.length - 1;
-            currentQuestionIndex = targetIdx;
+            currentQuestionIndex = lastAnsweredIdx;
         };
 
         /**
