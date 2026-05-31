@@ -1278,3 +1278,21 @@
         }
         .header-delete-btn:hover, .header-delete-btn:active { background: rgba(0, 0, 0, 0.08); color: var(--color-text-main); }
         .header-delete-btn:active { transform: scale(0.92); }
+
+        #submit-btn {
+            padding: 8px 14px !important; background-color: rgba(0,0,0,0.04) !important;
+            color: var(--color-primary) !important; border: none !important;
+            border-radius: 10px !important; font-weight: 600 !important;
+            font-size: 0.9em !important; cursor: pointer !important;
+            transition: all 0.2s cubic-bezier(0.2,0.8,0.2,1) !important;
+        }
+        #submit-btn:active { transform: scale(0.92) !important; background-color: rgba(0,0,0,0.08) !important; }
+
+        #card-toggle-btn {
+            padding: 8px 14px !important; background-color: rgba(0,0,0,0.04) !important;
+            color: var(--color-text-main) !important; border: none !important;
+            border-radius: 10px !important; font-weight: 600 !important;
+            font-size: 0.9em !important; cursor: pointer !important;
+            transition: all 0.2s cubic-bezier(0.2,0.8,0.2,1) !important;
+        }
+        #card-toggle-btn:active { transform: scale(0.92) !important; background-color: rgba(0,0,0,0.08) !important; }
