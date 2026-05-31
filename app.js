@@ -324,6 +324,19 @@
             currentQuestionIndex = lastAnsweredIdx;
         };
 
+        window.getUnifiedQuizHeaderHtml = function(quizName, answeredCount, totalCount) {
+            return '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,0.05);margin-bottom:15px;width:100%;box-sizing:border-box;">' +
+                '<div style="display:flex;flex-direction:column;gap:6px;max-width:60%;text-align:left;">' +
+                    '<h3 id="quiz-title" style="margin:0;font-size:1.1em;color:var(--color-text-main);line-height:1.4;word-break:break-all;">' + escapeHtml(quizName) + '</h3>' +
+                    '<div id="timer-display" style="font-size:0.85em;color:var(--color-text-secondary);text-align:left;">用时: <span id="time-display">00:00:00</span></div>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' +
+                    '<button id="submit-quiz-btn" onclick="handleSubmit()" style="padding:8px 16px;background:var(--color-primary);border:none;border-radius:12px;color:#FFFFFF;font-weight:600;font-size:0.9em;cursor:pointer;transition:opacity 0.2s;">交卷</button>' +
+                    '<button id="answer-sheet-btn" onclick="toggleAnswerCard()" style="padding:8px 16px;background:#EAECEF;border:none;border-radius:12px;color:var(--color-text-main);font-weight:600;font-size:0.9em;cursor:pointer;transition:opacity 0.2s;">答题卡 (' + answeredCount + '/' + totalCount + ')</button>' +
+                '</div>' +
+            '</div>';
+        };
+
         /**
          * 为题目数组中的每道题生成 shuffledOptions（基于原始 options 的乱序副本）。
          */
