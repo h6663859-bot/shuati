@@ -1314,7 +1314,7 @@
                 historyCard.innerHTML = '\
                     <button class="delete-history-btn" onclick="event.stopPropagation();deleteHistoryRecord(\'' + safeNameJs2 + '\',\'' + safeHashJs2 + '\',' + hIdx + ',this)" style="border:none;background:rgba(0,0,0,0.03);color:var(--color-text-secondary);"><span class="material-icons">delete</span></button>\
                     <div style="margin:0;font-size:0.9em;padding-right:30px;line-height:1.7;color:var(--color-text-main);">\
-                        <div style="margin-bottom:4px;">' + splitTag + '<strong>得分: <span style="font-size:1.15em;color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong> <span style="color:rgba(0,0,0,0.1);margin:0 6px;">|</span> 对/错: ' + correctCount + '/' + wrongCount + '</div>\
+                        <div style="margin-bottom:4px;display:flex;align-items:center;flex-wrap:wrap;column-gap:6px;row-gap:4px;">' + splitTag + '<span style="white-space:nowrap;"><strong>得分: <span style="font-size:1.15em;color:' + (score >= 80 ? 'var(--color-primary)' : 'var(--color-wrong)') + ';">' + score + '分</span></strong></span><span style="color:rgba(0,0,0,0.1);">|</span><span style="white-space:nowrap;">对/错: ' + correctCount + '/' + wrongCount + '</span></div>\
                         <div style="color:var(--color-text-secondary);font-size:0.9em;display:flex;justify-content:space-between;align-items:center;">\
                             <span>用时: ' + timeStr + '</span>\
                             <span style="font-size:0.85em;color:#A0A0A5;">' + dateStr + '</span>\
